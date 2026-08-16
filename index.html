@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PPL">
+<meta name="theme-color" content="#0e1116">
+<link rel="manifest" href="manifest.json">
+<title>PPL Tracker</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ========== TREINO DO DIA ========== -->
+  <section id="view-today" class="view active">
+    <div class="topbar">
+      <h1>Treino de hoje</h1>
+      <span class="meta" id="today-date"></span>
+    </div>
+    <div id="today-content"></div>
+  </section>
+
+  <!-- ========== DASHBOARD ========== -->
+  <section id="view-dash" class="view">
+    <div class="topbar">
+      <h1>Progresso</h1>
+      <span class="meta" id="dash-range"></span>
+    </div>
+    <div id="dash-content"></div>
+  </section>
+
+  <!-- ========== IMPORTAR ========== -->
+  <section id="view-import" class="view">
+    <div class="topbar"><h1>Importar histórico</h1></div>
+    <p class="hint" style="padding-top:0">
+      Cole aqui o texto do bloco de notas do iPhone — do jeito que está.
+      Datas em <b>13/08</b>, séries em <b>30kg 10</b>, drops e rest-pause são
+      reconhecidos automaticamente.
+    </p>
+    <textarea class="paste" id="paste" spellcheck="false" autocapitalize="off"
+      placeholder="13/08&#10;Sup reto barra&#10;25kg 10&#10;30kg 10&#10;30kg 8 Drop 20kg 10&#10;&#10;Abd inferior elev&#10;14&#10;14"></textarea>
+    <button class="btn primary" id="btn-preview">Analisar texto</button>
+    <div id="import-preview"></div>
+  </section>
+
+  <!-- ========== AJUSTES ========== -->
+  <section id="view-settings" class="view">
+    <div class="topbar"><h1>Ajustes</h1></div>
+    <div id="settings-content"></div>
+  </section>
+
+</div>
+
+<nav class="tabbar" role="tablist">
+  <button role="tab" data-view="today"    aria-selected="true"><span class="ico">🏋️</span>Hoje</button>
+  <button role="tab" data-view="dash"     aria-selected="false"><span class="ico">📈</span>Progresso</button>
+  <button role="tab" data-view="import"   aria-selected="false"><span class="ico">📋</span>Importar</button>
+  <button role="tab" data-view="settings" aria-selected="false"><span class="ico">⚙️</span>Ajustes</button>
+</nav>
+
+<div id="toast"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
