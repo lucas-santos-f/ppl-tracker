@@ -11,6 +11,12 @@ import { indexByExercise } from './parser.js';
 import { normalizeExercise, movementsOf, contradicts } from './normalize.js';
 import { prescribe } from './calc.js';
 import { programFor, PROGRAM } from './program.js';
+import { canonicalId } from './curation.js';
+import { techniquePattern, techniquePlan } from './technique.js';
+
+// Quantas séries de trabalho um exercício tem por padrão, quando o histórico
+// não diz outra coisa.
+const DEFAULT_SETS = 3;
 
 export const CYCLE = [
   { slot: 'push', variant: 'A' },
@@ -121,6 +127,12 @@ export function workoutForPosition(state, opts = {}) {
     // exista número no histórico (barra fixa assistida, por exemplo).
     const noLoad = !!item.bodyweight || !!item.cardio;
 
+    // Quantas séries e onde entram drop set / rest-pause, lidos do histórico
+    // deste exercício — não de uma regra fixa.
+    const plannedSets = typicalSetCount(history, base.id) || DEFAULT_SETS;
+    const pattern = found ? techniquePattern(history, found.id) : { byPosition: new Map(), sampled: 0 };
+    const techniques = techniquePlan(pattern, plannedSets);
+
     return {
       ...p,
       name: item.name,             // nome oficial do programa, não a grafia do caderno
@@ -133,6 +145,8 @@ export function workoutForPosition(state, opts = {}) {
       bodyweight: noLoad || p.bodyweight,
       matchedAs: found ? found.name : null,   // como foi localizado no histórico
       noHistory: !found,
+      plannedSets,
+      techniques,                  // [{setIndex, type, frequency}]
     };
   });
 
@@ -162,6 +176,22 @@ const MIN_MATCH = 0.5;
  * anotada duas vezes.
  */
 /**
+ * Quantas séries o exercício costuma ter — mediana das últimas vezes, para que
+ * um dia atípico não desloque o número.
+ */
+function typicalSetCount(sessions, exerciseId) {
+  const counts = [];
+  for (const s of sessions || []) {
+    for (const e of s.exercises || []) {
+      if (e.id === exerciseId && (e.sets || []).length) counts.push(e.sets.length);
+    }
+  }
+  if (counts.length === 0) return null;
+  const recent = counts.slice(-8).sort((a, b) => a - b);
+  return recent[Math.floor(recent.length / 2)];
+}
+
+/**
  * Resolve de onde vêm as cargas de um exercício do programa.
  * `hist: null` declara que o exercício é novo; uma string declara o alvo exato;
  * a ausência do campo cai no casamento automático.
@@ -169,7 +199,9 @@ const MIN_MATCH = 0.5;
 function resolveHistory(index, item) {
   if (item.hist === null) return null;
   if (typeof item.hist === 'string') {
-    const byId = index.get(normalizeExercise(item.hist).id);
+    // canonicalId para que um alvo declarado com o nome antigo ("Serrote
+    // Unilateral") continue achando o histórico depois da fusão.
+    const byId = index.get(canonicalId(normalizeExercise(item.hist).id));
     if (byId) return byId;
   }
   return findInHistory(index, { match: item.hist ?? item.name, alt: item.alt });

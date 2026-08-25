@@ -24,6 +24,7 @@ export const PROGRAM = {
   push: {
     label: 'Push',
     exercises: [
+      // No Push B, o primeiro movimento mantém carga alta antes do bloco metabólico.
       { part: 'Peito',    name: 'Supino Inclinado Barra', hist: 'Supino Inclinado Barra',
         repRange: { B: [5, 8] } },
 
@@ -48,16 +49,20 @@ export const PROGRAM = {
   pull: {
     label: 'Pull',
     exercises: [
-      // Barra fixa e puxada alta alternam entre Pull A e B: uma vertical por dia.
-      // No Pull B, o serrote abre o treino com carga antes da barra fixa.
-      { part: 'Remada', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral', only: 'B', repRange: { B: [5, 8] } },
+      // Uma vertical por dia, sempre abrindo o treino: puxada alta no dia de
+      // força (A), barra fixa no dia metabólico (B). Só uma das duas passa pelo
+      // filtro, então listar as duas aqui mantém a vertical como 1º exercício.
+      { part: 'Dorsal', name: 'Puxada Alta', hist: 'Puxada Alta', only: 'A' },
       {
         part: 'Dorsal', name: 'Barra Fixa (Pegada Aberta)', hist: 'Barra Fixa Aberta Fechada',
         only: 'B', bodyweight: true,
         note: '3 séries brigando com o peso (baby reps, sem rest) + 4ª série pegada fechada',
       },
-      { part: 'Dorsal', name: 'Puxada Alta',                   hist: 'Puxada Alta', only: 'A' },
-      { part: 'Remada', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral', only: 'A' },
+
+      // A barra fixa é peso corporal e não carrega carga alvo, então quem
+      // segura o bloco pesado do Pull B é o serrote: 5-8 reps nos dois dias.
+      { part: 'Remada', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral',
+        repRange: { B: [5, 8] } },
       { part: 'Dorsal', name: 'Remada Cavalo Peito no Banco',  hist: 'Remada Cavalo Peito Banco' },
       { part: 'Ombro post.', name: 'Peck Deck Invertido',      hist: 'Voador Invertido', alt: 'Y-Raise' },
       { part: 'Tríceps', name: 'Tríceps Francês Sentado Halter', hist: 'Tríceps Francês Halter Sentado' },

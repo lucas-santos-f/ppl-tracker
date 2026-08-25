@@ -103,6 +103,10 @@ const ABBREV = {
 // Palavras que descrevem COMO a série foi feita, não QUAL exercício é.
 // Saem do nome porque já estão capturadas nos campos da série.
 const SET_MODIFIERS = new Set([
+  // "Cadeira Flexora" e "Flexora" são o mesmo exercício — a cadeira é só o
+  // móvel. Já "Mesa Flexora" é outro movimento (deitado), por isso 'mesa'
+  // continua fazendo parte da identidade e não entra nesta lista.
+  'cadeira',
   'cada', 'lado', 'lados', 'por', 'c',
   'drop', 'dropset', 'rest', 'pause', 'top', 'set', 'sets',
   'serie', 'series', 'reps', 'rep', 'trabalho', 'primeira', 'segunda', 'terceira',
@@ -262,7 +266,7 @@ export const MOVEMENTS = new Set([
   'agachamento', 'extensora', 'flexora', 'panturrilha', 'stiff', 'levantamento',
   'adutora', 'abdutora', 'gluteo', 'hack', 'pendulo', 'leg', 'press',
   'abdominal', 'lombar', 'prancha',
-  'barra', 'fixa', 'graviton', 'cadeira', 'mesa',
+  'barra', 'fixa', 'graviton', 'mesa',
   'esteira', 'bicicleta', 'escada',
 ]);
 

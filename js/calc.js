@@ -1,5 +1,7 @@
 // Cálculo de 1RM e cargas alvo.
 
+import { workSets, tonnage } from './sets.js';
+
 // Brzycki é confiável até ~12 reps. Acima disso a fórmula superestima muito
 // (uma série de 20 reps projeta 2,1× a carga usada), então séries longas entram
 // no histórico mas não pesam na estimativa de 1RM.
@@ -22,14 +24,17 @@ function repsConfidence(reps) {
   return 0.94;
 }
 
-export const INTENSITY = {
-  A: 0.85, // Força      → 4-6 reps
-  B: 0.70, // Hipertrofia → 10-15 reps
+// Dia pesado em 5-8 reps: um treino inteiro de 4-6 castiga articulação demais
+// para o retorno que dá. A intensidade acompanha a faixa — 5-8 reps pede menos
+// carga que 4-6, e prescrever 85% para 8 reps seria pedir uma série impossível.
+export const REP_RANGE = {
+  A: [5, 8],
+  B: [10, 15],
 };
 
-export const REP_RANGE = {
-  A: [4, 6],
-  B: [10, 15],
+export const INTENSITY = {
+  A: 0.80, // Força      → 5-8 reps
+  B: 0.70, // Hipertrofia → 10-15 reps
 };
 
 /**
@@ -175,16 +180,15 @@ export function prescribe(exercise, variant, opts = {}) {
 
 // Séries do último dia em que o exercício foi feito — mostrado como referência
 // na tela do treino ("da última vez você fez...").
+//
+// Aquecimento fica de fora: mostrar "20kg×9" como referência de um dia em que
+// o trabalho foi a 30kg induz a erro na hora de escolher a carga.
 function lastSessionSets(sessions) {
   const dated = (sessions || []).filter((s) => s.date);
   if (dated.length === 0) return [];
   const lastDate = dated.reduce((a, b) => (b.date > a.date ? b : a)).date;
-  return dated.filter((s) => s.date === lastDate).map((s) => ({ load: s.load, reps: s.reps }));
+  const ofDay = dated.filter((s) => s.date === lastDate);
+  return workSets(ofDay).map((s) => ({ load: s.load, reps: s.reps, role: s.role }));
 }
 
-/**
- * Volume total (carga × reps) de uma lista de séries — métrica do dashboard.
- */
-export function tonnage(sets) {
-  return (sets || []).reduce((sum, s) => sum + (s.load || 0) * (s.reps || 0), 0);
-}
+export { tonnage };

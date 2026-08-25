@@ -3,8 +3,10 @@
 import { db } from './db.js';
 import { parseHistory, indexByExercise } from './parser.js';
 import { workoutForPosition, upcoming, inferStartPosition, CYCLE, SLOT_LABEL, VARIANT_LABEL } from './ppl.js';
-import { bestOneRM, brzycki, tonnage } from './calc.js';
+import { bestOneRM, brzycki, tonnage, REP_RANGE, INTENSITY } from './calc.js';
 import { syncVerify, syncPull, syncPush, SyncError } from './sync.js';
+import { techniqueLabel } from './technique.js';
+import { classifySets, tonnage as setsTonnage } from './sets.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -83,6 +85,7 @@ function show(view) {
   window.scrollTo(0, 0);
   if (view === 'today') renderToday();
   if (view === 'dash') renderDash();
+  if (view === 'hist') renderHistory();
   if (view === 'settings') renderSettings();
 }
 
@@ -104,8 +107,20 @@ function renderToday() {
     return;
   }
 
-  const w = draft || workoutForPosition(state);
-  if (!draft) draft = { ...w, logs: {} };
+  // Treino de hoje já concluído: depois de concluir, o ciclo avança e a tela
+  // passa a mostrar o PRÓXIMO treino. Sem este bloco, o que foi feito hoje
+  // some da vista mesmo estando salvo — que foi exatamente o que aconteceu.
+  const doneToday = (state.sessions || []).filter((s) => s.date === todayISO() && s.logged);
+
+  // Retoma o treino em andamento que estiver gravado — inclusive de outra
+  // sessão do navegador, ou vindo do outro aparelho pelo sync.
+  if (!draft) {
+    const w = workoutForPosition(state);
+    const saved = db.loadDraft();
+    const mesmoTreino = saved && saved.position === w.position && saved.date === todayISO();
+    draft = { ...w, logs: mesmoTreino ? (saved.logs || {}) : {} };
+  }
+  const w = draft;
 
   if (w.empty) {
     root.innerHTML = `
@@ -120,16 +135,30 @@ function renderToday() {
   }
 
   const isForca = w.variant === 'A';
-  const [lo, hi] = w.exercises[0]?.repRange ?? (isForca ? [4, 6] : [10, 15]);
+
+  // O cabeçalho descreve o DIA, não o primeiro exercício: a faixa padrão da
+  // variante. O abridor pesado do dia metabólico é uma exceção deliberada e
+  // aparece como aviso à parte — senão o card anunciaria "5-8 reps" para um
+  // treino que é 10-15 do segundo exercício em diante.
+  // O bloco pesado nem sempre é o exercício 1: no Pull B a barra fixa abre sem
+  // carga, e quem segura a carga é o serrote logo atrás.
+  const [lo, hi] = REP_RANGE[w.variant];
+  const heavy = isForca ? null : w.exercises.find((e) => e.repRange && e.repRange[1] < lo);
+
   const done = Object.values(draft.logs).filter((l) => l.sets?.some((s) => s.reps)).length;
 
   root.innerHTML = `
+    ${doneToday.map(finishedCard).join('')}
+
     <div class="day-card" data-variant="${w.variant}">
       <div class="focus">${isForca ? '🔥' : '💧'} ${esc(w.subtitle)}</div>
       <p class="slot">${esc(w.title)}</p>
       <div class="range">
-        Alvo de ${lo}–${hi} reps · ${isForca ? '85' : '70'}% da 1RM estimada
+        Alvo de ${lo}–${hi} reps · ${Math.round(INTENSITY[w.variant] * 100)}% da 1RM estimada
       </div>
+      ${heavy ? `<div class="range" style="margin-top:6px">
+        Bloco pesado: ${esc(heavy.name)} em ${heavy.repRange[0]}–${heavy.repRange[1]} reps
+      </div>` : ''}
       <div class="range" style="margin-top:6px">
         ${done}/${w.exercises.length} exercícios registrados
       </div>
@@ -139,6 +168,11 @@ function renderToday() {
       ${w.exercises.map((e, i) => exerciseCard(e, i, w.variant)).join('')}
     </div>
 
+    ${done > 0 ? `<p class="hint pending">
+      Preenchido mas ainda não concluído. Está salvo neste aparelho, mas só entra
+      no histórico (e no sync) depois de <b>Concluir treino</b>.
+    </p>` : ''}
+
     <button class="btn ${isForca ? 'forca' : 'hiper'}" id="finish">Concluir treino</button>
     <button class="btn ghost" id="skip">Pular este treino (adiar)</button>
   `;
@@ -146,6 +180,51 @@ function renderToday() {
   wireExerciseCards();
   $('#finish').addEventListener('click', finishWorkout);
   $('#skip').addEventListener('click', advanceCycle);
+  $$('.reopen').forEach((b) => b.addEventListener('click', () => reopenWorkout(b.dataset.date)));
+}
+
+/** Resumo de um treino já concluído hoje, com opção de reabrir para corrigir. */
+function finishedCard(session) {
+  const linhas = (session.exercises || []).map((e) => {
+    const sets = e.sets.map((s) => (s.load ? `${s.load}×${s.reps}` : `${s.reps}`)).join('  ');
+    return `<div class="done-row"><span class="dn">${esc(e.name)}</span><span class="ds">${esc(sets)}</span></div>`;
+  }).join('');
+
+  return `
+    <div class="day-card done-card" data-variant="${esc(session.variant || 'A')}">
+      <div class="focus">✓ Concluído hoje${session.slot ? ' · ' + esc(SLOT_LABEL[session.slot] ?? '') : ''}</div>
+      <div class="done-list">${linhas}</div>
+      <button class="btn ghost reopen" data-date="${esc(session.date)}" style="margin-top:12px">
+        Reabrir para corrigir
+      </button>
+    </div>`;
+}
+
+/**
+ * Traz um treino concluído de volta para edição: recarrega o que foi feito no
+ * rascunho e recua o ciclo, para que concluir de novo substitua em vez de
+ * duplicar.
+ */
+async function reopenWorkout(date) {
+  const session = (state.sessions || []).find((s) => s.date === date && s.logged);
+  if (!session) return;
+
+  const ok = await confirmDialog('Reabrir este treino para corrigir os números?');
+  if (!ok) return;
+
+  const pos = Math.max(0, (state.cyclePosition || 0) - 1);
+  db.setCyclePosition(pos);
+  state = db.load();
+
+  const w = workoutForPosition(state);
+  const logs = {};
+  for (const e of session.exercises || []) {
+    logs[e.id] = { sets: e.sets.map((s) => ({ load: s.load || null, reps: s.reps })) };
+  }
+  draft = { ...w, logs };
+  persistDraft();
+  renderToday();
+  toast('Treino reaberto — conclua de novo ao terminar');
 }
 
 function exerciseCard(e, i, variant) {
@@ -168,7 +247,7 @@ function exerciseCard(e, i, variant) {
        de <b>${e.bestLoad}kg</b>. Limitado a +10% do recorde.</div>`
     : '';
 
-  const nSets = Math.max(log.sets.length, 3);
+  const nSets = Math.max(log.sets.length, e.plannedSets ?? 3);
   const rows = Array.from({ length: nSets }, (_, si) => setRow(e, si, log.sets[si], lo, hi)).join('');
 
   return `
@@ -205,7 +284,15 @@ function setRow(e, si, saved, lo, hi) {
   const reps = saved?.reps ?? '';
   const hit = reps === '' ? '' : (Number(reps) >= lo ? 'yes' : 'no');
   const loadPlaceholder = e.targetLoad != null ? e.targetLoad : '—';
+
+  // Técnica prescrita para esta série, vinda do padrão do próprio histórico.
+  const tech = (e.techniques || []).find((t) => t.setIndex === si);
+  const techTag = tech
+    ? `<div class="tech-tag" data-type="${esc(tech.type)}">${esc(techniqueLabel(tech.type))}</div>`
+    : '';
+
   return `
+    ${techTag}
     <div class="set-row" data-set="${si}">
       <div class="idx">${si + 1}</div>
       <div class="field">
@@ -246,6 +333,7 @@ function wireExerciseCards() {
 
       card.classList.toggle('done', log.sets.some((s) => s?.reps));
       updateProgressCount();
+      persistDraft();
     });
 
     $('.add-set', card).addEventListener('click', () => {
@@ -265,7 +353,27 @@ function wireExerciseCards() {
       $$('.set-row', card).forEach((r, i) => { r.dataset.set = i; $('.idx', r).textContent = i + 1; });
       card.classList.toggle('done', !!log?.sets.some((s) => s?.reps));
       updateProgressCount();
+      persistDraft();
     });
+  });
+}
+
+/**
+ * Grava o treino em andamento a cada digitação.
+ *
+ * Guarda só o essencial para retomar (data, posição no ciclo e o que foi
+ * digitado) — a lista de exercícios e as cargas alvo são recalculadas na
+ * abertura, então não precisam ser persistidas.
+ */
+function persistDraft() {
+  if (!draft) return;
+  db.saveDraft({
+    date: todayISO(),
+    position: draft.position,
+    slot: draft.slot,
+    variant: draft.variant,
+    logs: draft.logs,
+    savedAt: new Date().toISOString(),
   });
 }
 
@@ -300,14 +408,16 @@ function finishWorkout() {
   const res = db.logWorkout(session);
   if (!res.ok) { toast('Erro ao salvar: ' + res.error, true); return; }
 
+  db.clearDraft();          // o treino virou histórico, o rascunho não serve mais
   state = db.load();
   draft = null;
-  toast(`Treino salvo · ${exercises.length} ${exercises.length === 1 ? 'exercício' : 'exercícios'}`);
+  toast(`Treino salvo · ${exercises.length} ${exercises.length === 1 ? 'exercício' : 'exercícios'} · envie para o GitHub`);
   renderToday();
 }
 
 function advanceCycle() {
   db.setCyclePosition((state.cyclePosition || 0) + 1);
+  db.clearDraft();
   state = db.load();
   draft = null;
   toast('Adiado para o próximo treino do ciclo');
@@ -444,10 +554,15 @@ function renderDash() {
       <div class="stat"><div class="v">${(volume / 1000).toFixed(0)}t</div><div class="k">volume</div></div>
     </div>
 
-    <p class="hint" style="padding-top:0">
-      Os números abaixo são <b>1RM estimada</b> (projeção de Brzycki a partir das
-      suas séries) — não é a carga que você de fato colocou na barra ou no halter.
-    </p>
+    <div class="legend">
+      <p><b>Barras</b> = carga real da sua melhor série em cada treino, com as
+      repetições logo abaixo (ex: <b>90kg</b> / <b>7r</b>).</p>
+      <p><b>1RM 49,5 → 54,5kg</b> = estimativa de quanto você levantaria em 1
+      repetição máxima, comparando a <b>primeira metade</b> do seu histórico
+      naquele exercício com a <b>segunda metade</b>.</p>
+      <p><b>+4%</b> = quanto essa estimativa cresceu entre as duas metades.
+      Positivo é progresso; perto de zero é estagnação.</p>
+    </div>
 
     ${section('Evoluindo', gaining, 'Nenhum exercício com ganho claro ainda.')}
     ${section('Estagnados — olhar aqui', stalled, 'Nada estagnado. Bom sinal.')}
@@ -458,6 +573,23 @@ function renderDash() {
 // Com 4 séries, um dia bom vira "+336%" e o dashboard fica inútil.
 const MIN_SETS_FOR_TREND = 10;
 const MIN_SETS_PER_HALF = 4;
+
+/**
+ * Melhor série de cada dia: a de maior carga, com as reps que foram feitas
+ * nela. É o número que interessa no gráfico — "quanto levantei", não uma
+ * projeção.
+ */
+function bestSetPerDay(sets) {
+  const byDay = new Map();
+  for (const s of sets) {
+    if (!s.date || !(s.load > 0)) continue;
+    const cur = byDay.get(s.date);
+    if (!cur || s.load > cur.load || (s.load === cur.load && s.reps > cur.reps)) {
+      byDay.set(s.date, { date: s.date, load: s.load, reps: s.reps });
+    }
+  }
+  return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
 
 // Compara a 1RM estimada da primeira metade do histórico com a da segunda.
 function buildProgress(ex) {
@@ -484,7 +616,8 @@ function buildProgress(ex) {
     to: Math.round(last.oneRM * 10) / 10,
     pct,
     samples: dated.length,
-    series: dated.map((s) => brzycki(s.load, s.reps)).filter(Boolean),
+    // Carga real por dia — o que vai para o gráfico.
+    days: bestSetPerDay(dated),
     lastDate: dated[dated.length - 1].date,
   };
 }
@@ -505,42 +638,139 @@ function section(title, rows, emptyMsg) {
             <div class="val">1RM ${r.from} → ${r.to}kg</div>
             <div class="delta ${dir}">${sign}${r.pct.toFixed(1)}%</div>
           </div>
-          ${sparkline(r.series, dir)}`;
+          ${loadChart(r.days, dir)}`;
       }).join('')}
     </div>`;
 }
 
-// Sparkline em SVG inline — sem biblioteca de gráficos. O traço sozinho não
-// diz quanto é quanto; por isso o mínimo e o máximo em kg ficam escritos ao
-// lado dos pontos correspondentes, não só a forma da curva.
-function sparkline(values, dir) {
-  if (values.length < 2) return '';
-  const w = 300, h = 48, pad = 3, padTop = 14, padBottom = 3;
-  const min = Math.min(...values), max = Math.max(...values);
-  const span = max - min || 1;
-  const y = (v) => h - padBottom - ((v - min) / span) * (h - padTop - padBottom);
-  const pts = values.map((v, i) => {
-    const x = pad + (i / (values.length - 1)) * (w - pad * 2);
-    return `${x.toFixed(1)},${y(v).toFixed(1)}`;
-  }).join(' ');
+/**
+ * Gráfico de barras da carga levantada.
+ *
+ * Mostra a CARGA REAL da melhor série de cada treino, com as repetições logo
+ * abaixo — não a 1RM estimada, que é uma projeção e não serve para decidir
+ * quanto colocar na máquina.
+ *
+ * Cada barra é um treino (não um mês): agregar por mês escondia justamente a
+ * variação entre sessões, que é o que se quer olhar.
+ *
+ * @param {Array<{date, load, reps}>} days
+ * @param {'up'|'down'|'flat'} dir
+ * @param {{limit?:number, scroll?:boolean}} [opts]
+ */
+function loadChart(days, dir, opts = {}) {
+  const limit = opts.limit ?? 10;
+  const bars = opts.scroll ? days : days.slice(-limit);
+  if (bars.length < 2) return '';
 
-  const iMax = values.indexOf(max), iMin = values.indexOf(min);
-  const xOf = (i) => pad + (i / (values.length - 1)) * (w - pad * 2);
+  const values = bars.map((b) => b.load);
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  // A base não é zero: com cargas de 100-150kg, barras a partir do zero ficam
+  // quase iguais e a variação some. A base é 88% do mínimo.
+  const base = Math.max(0, min * 0.88);
+  const span = (max - base) || 1;
+
   const color = dir === 'up' ? 'var(--ok)' : dir === 'down' ? 'var(--err)' : 'var(--text)';
-  const fmt1 = (v) => (Math.round(v * 10) / 10).toString();
+  const slotW = opts.scroll ? 44 : Math.max(30, 320 / bars.length);
+  const w = Math.max(320, slotW * bars.length);
+  const h = 118, padTop = 20, padBottom = 30;
+  const barW = Math.min(30, slotW * 0.66);
 
-  const label = (i, v, anchor) => `
-    <text x="${xOf(i).toFixed(1)}" y="${(y(v) - 5).toFixed(1)}" text-anchor="${anchor}"
-      font-size="9" font-weight="700" fill="${color}">${fmt1(v)}kg</text>`;
+  const rects = bars.map((b, i) => {
+    const x = i * slotW + (slotW - barW) / 2;
+    const bh = ((b.load - base) / span) * (h - padTop - padBottom);
+    const y = h - padBottom - bh;
+    const cx = x + barW / 2;
+    return `
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}"
+        height="${Math.max(3, bh).toFixed(1)}" rx="3" fill="${color}"
+        opacity="${b.load === max ? 1 : 0.6}"/>
+      <text x="${cx.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle"
+        font-size="11" font-weight="800" fill="var(--text)">${fmtKg(b.load)}</text>
+      <text x="${cx.toFixed(1)}" y="${(h - padBottom + 12).toFixed(1)}" text-anchor="middle"
+        font-size="9" font-weight="700" fill="${color}">${b.reps}r</text>
+      <text x="${cx.toFixed(1)}" y="${(h - padBottom + 23).toFixed(1)}" text-anchor="middle"
+        font-size="8" font-weight="600" fill="var(--text)" opacity="0.7">${esc(dayLabel(b.date))}</text>`;
+  }).join('');
 
-  return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true">
-    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8"
-      stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-    <circle cx="${xOf(iMax).toFixed(1)}" cy="${y(max).toFixed(1)}" r="2.2" fill="${color}"/>
-    ${iMin !== iMax ? `<circle cx="${xOf(iMin).toFixed(1)}" cy="${y(min).toFixed(1)}" r="2.2" fill="${color}"/>` : ''}
-    ${label(iMax, max, iMax < values.length / 2 ? 'start' : 'end')}
-    ${iMin !== iMax ? label(iMin, min, iMin < values.length / 2 ? 'start' : 'end') : ''}
-  </svg>`;
+  const svg = `<svg class="chart" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"
+    role="img" aria-label="Carga levantada por treino, em kg">${rects}</svg>`;
+
+  return opts.scroll ? `<div class="chart-scroll">${svg}</div>` : svg;
+}
+
+const fmtKg = (v) => (Number.isInteger(v) ? v : Math.round(v * 10) / 10);
+
+function dayLabel(iso) {
+  if (!iso) return '';
+  const [, m, d] = iso.split('-');
+  return `${d}/${m}`;
+}
+
+// ================================================================ HISTÓRICO
+
+/**
+ * Histórico completo por exercício, um gráfico por exercício, com todos os
+ * treinos e rolagem lateral. A aba Progresso resume; esta mostra tudo.
+ */
+function renderHistory() {
+  const root = $('#hist-content');
+  const history = state.sessions || [];
+
+  if (history.length === 0) {
+    root.innerHTML = `<div class="empty"><div class="big">📊</div>
+      <p>Sem dados ainda.<br>Importe o histórico para ver.</p></div>`;
+    $('#hist-count').textContent = '';
+    return;
+  }
+
+  const index = indexByExercise(history);
+  const items = [...index.values()]
+    .map((ex) => {
+      const days = bestSetPerDay(ex.sessions.filter((s) => s.date && s.load > 0));
+      return { name: ex.name, group: ex.group, days, sets: ex.sessions.length };
+    })
+    .filter((it) => it.days.length >= 2)
+    .sort((a, b) => b.days.length - a.days.length);
+
+  $('#hist-count').textContent = `${items.length} exercícios`;
+
+  root.innerHTML = `
+    <div class="legend">
+      <p>Todos os treinos de cada exercício, do mais antigo ao mais recente.
+      <b>Arraste o gráfico para os lados</b> para ver o histórico inteiro.</p>
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <input type="search" id="hist-filter" placeholder="filtrar exercício…"
+        autocapitalize="off" style="text-align:left; padding-right:11px">
+    </div>
+    <div id="hist-list">
+      ${items.map(historyBlock).join('')}
+    </div>`;
+
+  $('#hist-filter').addEventListener('input', (ev) => {
+    const q = ev.target.value.trim().toLowerCase();
+    $$('#hist-list .hist-block').forEach((el) => {
+      el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
+    });
+  });
+}
+
+function historyBlock(item) {
+  const first = item.days[0];
+  const last = item.days[item.days.length - 1];
+  const pico = item.days.reduce((a, b) => (b.load > a.load ? b : a));
+  const dir = last.load > first.load ? 'up' : last.load < first.load ? 'down' : 'flat';
+
+  return `
+    <div class="hist-block" data-name="${esc(item.name.toLowerCase())}">
+      <div class="hist-head">
+        <div class="nm">${esc(item.name)}
+          <small>${item.days.length} treinos · ${item.sets} séries · recorde ${fmtKg(pico.load)}kg × ${pico.reps}</small>
+        </div>
+      </div>
+      ${loadChart(item.days, dir, { scroll: true })}
+    </div>`;
 }
 
 // ================================================================ AJUSTES
@@ -631,6 +861,17 @@ function wireSyncButtons() {
   });
 
   $('#sync-push')?.addEventListener('click', async () => {
+    // Avisa antes de enviar com treino preenchido e não concluído: o rascunho
+    // vai junto, mas não conta como treino feito nem avança o ciclo.
+    const pend = db.loadDraft();
+    const temPendente = pend && Object.values(pend.logs || {}).some((l) => l.sets?.some((s) => s?.reps));
+    if (temPendente) {
+      const ok = await confirmDialog(
+        'Há um treino preenchido que ainda não foi concluído. Ele será enviado como rascunho, mas só entra no histórico depois de "Concluir treino". Enviar assim mesmo?'
+      );
+      if (!ok) return;
+    }
+
     const btn = $('#sync-push');
     btn.disabled = true; btn.textContent = '↑ Enviando…';
     try {

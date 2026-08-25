@@ -18,6 +18,7 @@
 // Nada é descartado em silêncio: o que não for entendido vai para `warnings`.
 
 import { normalizeExercise } from './normalize.js';
+import { canonicalId, canonicalName, isExcluded } from './curation.js';
 
 // ── datas e marcadores de sessão ──────────────────────────────────────────────
 
@@ -153,9 +154,10 @@ export function parseHistory(text, opts = {}) {
 
     ensureSession(lineNo);
     flushExercise();
+    const id = canonicalId(norm.id);   // funde os apelidos declarados em curation.js
     exercise = {
-      id: norm.id,
-      name: norm.name,
+      id,
+      name: canonicalName(id, norm.name),
       group: norm.group,
       raw: rawLine.trim(),
       sets: [],
@@ -458,11 +460,15 @@ export function indexByExercise(sessions) {
       const entry = index.get(e.id);
       for (const set of e.sets) {
         if (set.reps == null) continue;
+        // Séries de máquinas com escala incomparável ficam de fora dos
+        // cálculos — ver EXCLUSIONS em curation.js.
+        if (isExcluded(e.id, set)) continue;
         entry.sessions.push({
           date: s.date,
-          load: set.perSide ? set.load : set.load, // carga anotada, tal como registrada
+          load: set.load,
           reps: set.reps,
           bodyweight: !!set.bodyweight,
+          techniques: set.techniques,
         });
       }
     }

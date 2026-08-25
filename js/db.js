@@ -12,6 +12,11 @@ const EMPTY = {
   updatedAt: null,
   sessions: [],     // histórico importado + treinos registrados
   cyclePosition: 0, // índice no ciclo PPL — avança só quando um treino é concluído
+
+  // Treino em andamento, gravado a cada número digitado. Sem isto, fechar o
+  // navegador no meio do treino perde tudo que foi preenchido, porque o
+  // registro só entraria em `sessions` ao concluir.
+  draft: null,      // { date, position, slot, variant, logs: {exId: {sets}} }
   settings: {
     githubRepo: null,   // "usuario/repo"
     githubPath: 'training-history.json',
@@ -124,10 +129,41 @@ export const db = {
     localStorage.removeItem(KEY);
   },
 
-  /** O que viaja no sync: só o histórico de treino, nunca configurações/token. */
+  /**
+   * Grava o treino em andamento. Chamado a cada digitação, então precisa ser
+   * barato: é só uma escrita no localStorage, sem tocar no histórico.
+   */
+  saveDraft(draft) {
+    const state = read();
+    state.draft = draft;
+    return write(state);
+  },
+
+  loadDraft() {
+    return read().draft;
+  },
+
+  clearDraft() {
+    const state = read();
+    state.draft = null;
+    return write(state);
+  },
+
+  /**
+   * O que viaja no sync: o histórico e também o treino em andamento — quem
+   * preenche na academia e envia antes de concluir não pode perder o que
+   * digitou só porque não apertou "Concluir".
+   * Configurações e token nunca vão.
+   */
   syncPayload() {
     const state = read();
-    return { version: state.version, sessions: state.sessions, cyclePosition: state.cyclePosition, updatedAt: state.updatedAt };
+    return {
+      version: state.version,
+      sessions: state.sessions,
+      cyclePosition: state.cyclePosition,
+      draft: state.draft,
+      updatedAt: state.updatedAt,
+    };
   },
 
   /**
@@ -145,6 +181,13 @@ export const db = {
     const undated = state.sessions.filter((s) => !s.date);
     state.sessions = [...byDate.values(), ...undated].sort(byDateAsc);
     if (typeof remote.cyclePosition === 'number') state.cyclePosition = remote.cyclePosition;
+
+    // Traz o treino em andamento do outro aparelho, a menos que este já tenha
+    // um mais recente em cima da mesa.
+    if (remote.draft && (!state.draft || String(remote.draft.savedAt) > String(state.draft.savedAt))) {
+      state.draft = remote.draft;
+    }
+
     state.settings.lastSyncAt = new Date().toISOString();
     state.settings.lastSyncSha = sha;
     return write(state);

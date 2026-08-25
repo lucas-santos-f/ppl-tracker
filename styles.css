@@ -61,7 +61,7 @@ body {
 
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: rgba(14, 17, 22, 0.92);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
@@ -70,13 +70,13 @@ body {
 .tabbar button {
   appearance: none; border: 0; background: none;
   color: var(--text);
-  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  font-size: 9.5px; font-weight: 600; letter-spacing: .02em;
   padding: 9px 4px 8px;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   min-height: var(--tap);
   cursor: pointer;
 }
-.tabbar button .ico { font-size: 19px; line-height: 1; }
+.tabbar button .ico { font-size: 17px; line-height: 1; }
 /* A aba ativa se distingue por acento e sublinhado, não por cinza. */
 .tabbar button[aria-selected="true"] {
   color: var(--forca); font-weight: 800;
@@ -180,12 +180,30 @@ body {
   color: var(--text); line-height: 1.4;
 }
 
+/* Treino preenchido mas não concluído — o passo que falta é fácil de esquecer. */
+.hint.pending {
+  border-left: 3px solid var(--warn); background: var(--surface-2);
+  border-radius: 0 8px 8px 0; padding: 10px 12px; margin: 12px 0 0;
+  color: var(--text); line-height: 1.4;
+}
+.hint.pending b { color: var(--warn); }
+
 .hint.capped {
   background: var(--surface-2); border-left: 3px solid var(--warn);
   border-radius: 0 8px 8px 0; padding: 9px 11px; margin-bottom: 10px;
   color: var(--text-dim); line-height: 1.4;
 }
 .hint.capped b { color: var(--warn); }
+
+/* Etiqueta da técnica prescrita para a série logo abaixo. */
+.tech-tag {
+  display: inline-block;
+  font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  padding: 3px 8px; border-radius: 6px; margin: 2px 0 4px 34px;
+  border: 1px solid currentColor;
+}
+.tech-tag[data-type="drop"] { color: var(--warn); }
+.tech-tag[data-type="rest-pause"] { color: var(--hiper); }
 
 .set-row {
   display: grid; grid-template-columns: 26px 1fr 1fr 40px;
@@ -297,7 +315,51 @@ textarea.paste:focus { outline: none; border-color: var(--text-dim); }
 .delta.down { color: var(--err); }
 .delta.flat { color: var(--text-faint); }
 
-.spark { display: block; width: 100%; height: 44px; }
+.chart { display: block; width: 100%; height: auto; margin: 2px 0 6px; }
+
+/* Gráfico longo: rola na horizontal dentro do próprio bloco, sem nunca
+   empurrar a largura da página. */
+.chart-scroll {
+  overflow-x: auto; overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  margin: 2px -2px 6px;
+  padding-bottom: 4px;
+}
+.chart-scroll .chart { width: auto; max-width: none; }
+
+/* ---------- treino já concluído ---------- */
+
+.done-card { border-color: var(--ok); }
+.done-card .focus { color: var(--ok); }
+.done-list { margin-top: 12px; }
+.done-row {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 6px 0; border-top: 1px solid var(--border);
+  font-size: 13.5px;
+}
+.done-row .dn { font-weight: 600; min-width: 0; }
+.done-row .ds { font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .9; }
+
+/* ---------- legenda explicativa ---------- */
+
+.legend {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px;
+}
+.legend p { margin: 0 0 7px; font-size: 12.5px; line-height: 1.45; }
+.legend p:last-child { margin-bottom: 0; }
+
+/* ---------- blocos do histórico ---------- */
+
+.hist-block {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 12px 6px; margin-bottom: 12px;
+}
+.hist-head { margin-bottom: 4px; }
+.hist-head .nm { font-size: 14.5px; font-weight: 650; }
+.hist-head .nm small {
+  display: block; font-size: 11.5px; font-weight: 500; margin-top: 2px; opacity: .85;
+}
 
 .empty {
   text-align: center; padding: 48px 20px; color: var(--text-faint);
