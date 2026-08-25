@@ -24,7 +24,8 @@ export const PROGRAM = {
   push: {
     label: 'Push',
     exercises: [
-      { part: 'Peito',    name: 'Supino Inclinado Barra', hist: 'Supino Inclinado Barra' },
+      { part: 'Peito',    name: 'Supino Inclinado Barra', hist: 'Supino Inclinado Barra',
+        repRange: { B: [5, 8] } },
 
       // Primeiro Push da semana (A) é crossover superior; o segundo (B) é supino reto.
       { part: 'Peito',    name: 'Crossover Peito Superior', hist: 'Crossover Superior', only: 'A' },
@@ -47,15 +48,16 @@ export const PROGRAM = {
   pull: {
     label: 'Pull',
     exercises: [
-      // A barra fixa sai do segundo Pull da semana para não estourar o volume
-      // semanal e abrir espaço para os exercícios menores.
+      // Barra fixa e puxada alta alternam entre Pull A e B: uma vertical por dia.
+      // No Pull B, o serrote abre o treino com carga antes da barra fixa.
+      { part: 'Remada', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral', only: 'B', repRange: { B: [5, 8] } },
       {
         part: 'Dorsal', name: 'Barra Fixa (Pegada Aberta)', hist: 'Barra Fixa Aberta Fechada',
-        only: 'A', bodyweight: true,
+        only: 'B', bodyweight: true,
         note: '3 séries brigando com o peso (baby reps, sem rest) + 4ª série pegada fechada',
       },
-      { part: 'Remada', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral' },
-      { part: 'Dorsal', name: 'Puxada Alta',                   hist: 'Puxada Alta' },
+      { part: 'Dorsal', name: 'Puxada Alta',                   hist: 'Puxada Alta', only: 'A' },
+      { part: 'Remada', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral', only: 'A' },
       { part: 'Dorsal', name: 'Remada Cavalo Peito no Banco',  hist: 'Remada Cavalo Peito Banco' },
       { part: 'Ombro post.', name: 'Peck Deck Invertido',      hist: 'Voador Invertido', alt: 'Y-Raise' },
       { part: 'Tríceps', name: 'Tríceps Francês Sentado Halter', hist: 'Tríceps Francês Halter Sentado' },
@@ -67,7 +69,8 @@ export const PROGRAM = {
   legs: {
     label: 'Legs',
     exercises: [
-      { part: 'Quadríceps', name: 'Agachamento Hack',   hist: 'Agachamento Hack' },
+      { part: 'Quadríceps', name: 'Agachamento Hack',   hist: 'Agachamento Hack',
+        repRange: { B: [5, 8] } },
       { part: 'Quadríceps', name: 'Agachamento Pêndulo', hist: 'Agachamento Pêndulo' },
       // Isolado de joelho: carga muito alta em rep baixa castiga a articulação
       // sem ganho real, então a extensora fica em 8-10 reps nos dois dias,
