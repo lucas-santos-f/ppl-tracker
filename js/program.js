@@ -75,7 +75,7 @@ export const PROGRAM = {
     label: 'Legs',
     exercises: [
       { part: 'Quadríceps', name: 'Agachamento Hack',   hist: 'Agachamento Hack',
-        repRange: { B: [5, 8] }, loadMultiplier: 2 },
+        repRange: { B: [5, 8] } },
       { part: 'Quadríceps', name: 'Agachamento Pêndulo', hist: 'Agachamento Pêndulo',
         machineBaseLoad: 10 },
       // Isolado de joelho: carga muito alta em rep baixa castiga a articulação
@@ -86,10 +86,9 @@ export const PROGRAM = {
 
       // A cada três treinos de perna, o terceiro troca flexora por stiff.
       { part: 'Posterior', name: 'Cadeira Flexora', hist: 'Flexora', unlessEveryThird: true },
-      { part: 'Posterior', name: 'Stiff',           hist: 'Stiff',   onlyEveryThird: true,
-        loadMultiplier: 2 },
+      { part: 'Posterior', name: 'Stiff',           hist: 'Stiff',   onlyEveryThird: true },
 
-      { part: 'Panturrilha', name: 'Panturrilha Máquina', hist: 'Panturrilha', loadMultiplier: 2 },
+      { part: 'Panturrilha', name: 'Panturrilha Máquina', hist: 'Panturrilha' },
       {
         part: 'Lombar', name: 'Elevação Lombar', hist: 'Elevação Lombar', highRep: true,
         note: 'mais reps, menos carga — nunca atingir a falha',
