@@ -60,10 +60,10 @@ export function brzycki(load, reps) {
   return load / denom;
 }
 
-/** Arredonda para o múltiplo de 2kg mais próximo (anilhas pareadas). */
-export function roundTo2kg(kg) {
+/** Arredonda cargas prescritas para o múltiplo de 5kg mais próximo. */
+export function roundTo5kg(kg) {
   if (!Number.isFinite(kg)) return null;
-  return Math.round(kg / 2) * 2;
+  return Math.round(kg / 5) * 5;
 }
 
 /**
@@ -138,7 +138,7 @@ export function targetLoad(oneRM, intensity, bestLoad) {
   const ceiling = Number.isFinite(bestLoad) ? bestLoad * MAX_OVER_BEST_LOAD : Infinity;
   const capped = raw > ceiling;
 
-  return { load: roundTo2kg(Math.min(raw, ceiling)), capped, raw: roundTo2kg(raw) };
+  return { load: roundTo5kg(Math.min(raw, ceiling)), capped, raw: roundTo5kg(raw) };
 }
 
 /**
@@ -151,7 +151,17 @@ export function targetLoad(oneRM, intensity, bestLoad) {
  * @returns {{exerciseId, name, variant, targetLoad, repRange, oneRM, stale, basedOn, bodyweight}}
  */
 export function prescribe(exercise, variant, opts = {}) {
-  const est = estimateOneRM(exercise.sessions, opts);
+  const machineBaseLoad = opts.machineBaseLoad ?? 0;
+  const calculationExercise = machineBaseLoad > 0
+    ? {
+        ...exercise,
+        sessions: (exercise.sessions || []).map((set) => ({
+          ...set,
+          load: set.load > 0 ? set.load + machineBaseLoad : set.load,
+        })),
+      }
+    : exercise;
+  const est = estimateOneRM(calculationExercise.sessions, opts);
   const [minReps, maxReps] = opts.repRange ?? REP_RANGE[variant];
   const intensity = opts.repRange ? intensityForReps((minReps + maxReps) / 2) : INTENSITY[variant];
 
@@ -159,20 +169,22 @@ export function prescribe(exercise, variant, opts = {}) {
   // o alvo é a faixa de reps, e a progressão é por volume.
   const isBodyweight = !est && (exercise.sessions || []).some((s) => s.bodyweight);
   const target = est ? targetLoad(est.oneRM, intensity, est.bestLoad) : { load: null, capped: false };
+  const prescribedLoad = Number.isFinite(target.load) ? Math.max(0, target.load - machineBaseLoad) : target.load;
+  const uncappedLoad = Number.isFinite(target.raw) ? Math.max(0, target.raw - machineBaseLoad) : target.raw;
 
   return {
     exerciseId: exercise.id,
     name: exercise.name,
     group: exercise.group,
     variant,
-    targetLoad: target.load,
+    targetLoad: prescribedLoad,
     capped: target.capped,       // alvo limitado pelo teto de segurança
-    uncappedLoad: target.raw,    // o que a fórmula pedia antes do teto
+    uncappedLoad,                // o que a fórmula pedia antes do teto
     repRange: [minReps, maxReps],
     oneRM: est ? Math.round(est.oneRM * 10) / 10 : null,
-    bestLoad: est ? est.bestLoad : null,
+    bestLoad: est ? est.bestLoad - machineBaseLoad : null,
     stale: est ? est.stale : false,
-    basedOn: est ? est.basedOn : null,
+    basedOn: est ? { ...est.basedOn, load: est.basedOn.load - machineBaseLoad } : null,
     bodyweight: isBodyweight,
     lastSets: lastSessionSets(exercise.sessions),
   };

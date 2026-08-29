@@ -7,6 +7,7 @@ import { bestOneRM, brzycki, tonnage, REP_RANGE, INTENSITY } from './calc.js';
 import { syncVerify, syncPull, syncPush, SyncError } from './sync.js';
 import { techniqueLabel } from './technique.js';
 import { classifySets, tonnage as setsTonnage } from './sets.js';
+import { loadMultiplierForExercise } from './program.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -186,7 +187,8 @@ function renderToday() {
 /** Resumo de um treino já concluído hoje, com opção de reabrir para corrigir. */
 function finishedCard(session) {
   const linhas = (session.exercises || []).map((e) => {
-    const sets = e.sets.map((s) => (s.load ? `${s.load}×${s.reps}` : `${s.reps}`)).join('  ');
+    const multiplier = loadMultiplierForExercise(e.name);
+    const sets = e.sets.map((s) => (s.load ? `${s.load * multiplier}×${s.reps}` : `${s.reps}`)).join('  ');
     return `<div class="done-row"><span class="dn">${esc(e.name)}</span><span class="ds">${esc(sets)}</span></div>`;
   }).join('');
 
@@ -219,7 +221,9 @@ async function reopenWorkout(date) {
   const w = workoutForPosition(state);
   const logs = {};
   for (const e of session.exercises || []) {
-    logs[e.id] = { sets: e.sets.map((s) => ({ load: s.load || null, reps: s.reps })) };
+    const planned = w.exercises.find((item) => item.exerciseId === e.id);
+    const multiplier = planned?.loadMultiplier ?? loadMultiplierForExercise(e.name);
+    logs[e.id] = { sets: e.sets.map((s) => ({ load: s.load ? s.load * multiplier : null, reps: s.reps })) };
   }
   draft = { ...w, logs };
   persistDraft();
@@ -389,7 +393,11 @@ function finishWorkout() {
     const log = draft.logs[ex.exerciseId];
     const sets = (log?.sets || [])
       .filter((s) => s && s.reps)
-      .map((s) => ({ load: s.load ?? 0, reps: s.reps, bodyweight: !s.load }));
+      .map((s) => ({
+        load: s.load ? s.load / (ex.loadMultiplier ?? 1) : 0,
+        reps: s.reps,
+        bodyweight: !s.load,
+      }));
     if (sets.length) {
       exercises.push({ id: ex.exerciseId, name: ex.name, group: ex.group, sets });
     }

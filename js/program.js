@@ -75,19 +75,20 @@ export const PROGRAM = {
     label: 'Legs',
     exercises: [
       { part: 'Quadríceps', name: 'Agachamento Hack',   hist: 'Agachamento Hack',
-        repRange: { B: [5, 8] } },
-      { part: 'Quadríceps', name: 'Agachamento Pêndulo', hist: 'Agachamento Pêndulo' },
+        repRange: { B: [5, 8] }, loadMultiplier: 2 },
+      { part: 'Quadríceps', name: 'Agachamento Pêndulo', hist: 'Agachamento Pêndulo',
+        machineBaseLoad: 10 },
       // Isolado de joelho: carga muito alta em rep baixa castiga a articulação
       // sem ganho real, então a extensora fica em 8-10 reps nos dois dias,
       // fora da ondulação padrão 4-6/10-15 do resto do programa.
       { part: 'Quadríceps', name: 'Cadeira Extensora', hist: 'Extensora',
-        repRange: { A: [8, 10], B: [8, 10] } },
+        repRange: { A: [8, 10], B: [8, 10] }, maxTargetLoad: 120 },
 
       // A cada três treinos de perna, o terceiro troca flexora por stiff.
       { part: 'Posterior', name: 'Cadeira Flexora', hist: 'Flexora', unlessEveryThird: true },
       { part: 'Posterior', name: 'Stiff',           hist: 'Stiff',   onlyEveryThird: true },
 
-      { part: 'Panturrilha', name: 'Panturrilha Máquina', hist: 'Panturrilha' },
+      { part: 'Panturrilha', name: 'Panturrilha Máquina', hist: 'Panturrilha', loadMultiplier: 2 },
       {
         part: 'Lombar', name: 'Elevação Lombar', hist: 'Elevação Lombar', highRep: true,
         note: 'mais reps, menos carga — nunca atingir a falha',
@@ -115,4 +116,13 @@ export function programFor(slot, variant, slotOccurrence = 0) {
     if (e.unlessEveryThird && isEveryThird) return false;
     return true;
   });
+}
+
+/** Multiplicador usado para exibir e registrar a carga total do aparelho. */
+export function loadMultiplierForExercise(name) {
+  for (const block of Object.values(PROGRAM)) {
+    const exercise = block.exercises.find((item) => item.name === name);
+    if (exercise) return exercise.loadMultiplier ?? 1;
+  }
+  return 1;
 }

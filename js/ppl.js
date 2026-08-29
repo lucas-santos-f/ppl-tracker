@@ -115,17 +115,35 @@ export function workoutForPosition(state, opts = {}) {
   // (flexora → flexora → stiff).
   const slotOccurrence = Math.floor(pos / CYCLE.length) * 2 + (step.variant === 'B' ? 1 : 0);
 
-  const exercises = programFor(step.slot, step.variant, slotOccurrence).map((item) => {
+  let plannedExercises = programFor(step.slot, step.variant, slotOccurrence);
+
+  // Exceção temporária para o treino usado no print de 29/08/2026.
+  const referenceDate = opts.referenceDate ?? new Date().toISOString().slice(0, 10);
+  if (referenceDate === '2026-08-29' && step.slot === 'legs') {
+    const stiff = PROGRAM.legs.exercises.find((item) => item.name === 'Stiff');
+    plannedExercises = plannedExercises.map((item) => item.name === 'Cadeira Flexora' ? stiff : item);
+  }
+
+  const exercises = plannedExercises.map((item) => {
     const found = resolveHistory(index, item);
     const base = found ?? { id: normalizeExercise(item.name).id, name: item.name, group: step.slot, sessions: [] };
     const p = prescribe(base, step.variant, {
       referenceDate: opts.referenceDate,
       repRange: item.repRange?.[step.variant],
+      machineBaseLoad: item.machineBaseLoad,
     });
 
     // Exercícios de peso corporal e cardio não recebem carga alvo, mesmo que
     // exista número no histórico (barra fixa assistida, por exemplo).
     const noLoad = !!item.bodyweight || !!item.cardio;
+    const loadMultiplier = item.loadMultiplier ?? 1;
+    const displayLoad = (load) => Number.isFinite(load)
+      ? Math.round(load * loadMultiplier * 10) / 10
+      : load;
+    const scaledTarget = displayLoad(p.targetLoad);
+    const targetLoad = Number.isFinite(scaledTarget) && Number.isFinite(item.maxTargetLoad)
+      ? Math.min(scaledTarget, item.maxTargetLoad)
+      : scaledTarget;
 
     // Quantas séries e onde entram drop set / rest-pause, lidos do histórico
     // deste exercício — não de uma regra fixa.
@@ -141,7 +159,13 @@ export function workoutForPosition(state, opts = {}) {
       alt: item.alt ?? null,
       cardio: !!item.cardio,
       highRep: !!item.highRep,
-      targetLoad: noLoad ? null : p.targetLoad,
+      loadMultiplier,
+      targetLoad: noLoad ? null : targetLoad,
+      oneRM: displayLoad(p.oneRM),
+      bestLoad: displayLoad(p.bestLoad),
+      uncappedLoad: displayLoad(p.uncappedLoad),
+      basedOn: p.basedOn ? { ...p.basedOn, load: displayLoad(p.basedOn.load) } : null,
+      lastSets: p.lastSets.map((set) => ({ ...set, load: displayLoad(set.load) })),
       bodyweight: noLoad || p.bodyweight,
       matchedAs: found ? found.name : null,   // como foi localizado no histórico
       noHistory: !found,
