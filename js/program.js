@@ -86,7 +86,8 @@ export const PROGRAM = {
 
       // A cada três treinos de perna, o terceiro troca flexora por stiff.
       { part: 'Posterior', name: 'Cadeira Flexora', hist: 'Flexora', unlessEveryThird: true },
-      { part: 'Posterior', name: 'Stiff',           hist: 'Stiff',   onlyEveryThird: true },
+      { part: 'Posterior', name: 'Stiff',           hist: 'Stiff',   onlyEveryThird: true,
+        loadMultiplier: 2 },
 
       { part: 'Panturrilha', name: 'Panturrilha Máquina', hist: 'Panturrilha', loadMultiplier: 2 },
       {
