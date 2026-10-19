@@ -2,6 +2,8 @@
 
 The workout tracker I use at the gym. It's built around how I actually log training: a messy note in iPhone Notes, in Portuguese, a year long. The app parses that notebook, suggests today's loads from the history and logs the session.
 
+Live demo: https://lucas-santos-f.github.io/ppl-tracker/ (starts empty, tap **Try it with sample data**).
+
 <p>
   <img src="docs/today.jpg" width="250" alt="today">
   <img src="docs/exercise.jpg" width="250" alt="exercise card">
@@ -21,7 +23,7 @@ The workout tracker I use at the gym. It's built around how I actually log train
 python -m http.server 4173
 ```
 
-Open http://localhost:4173, go to **Import** and paste `test/sample-history.txt` (synthetic data in the same format as my notebook, not my log).
+Open http://localhost:4173 and tap **Try it with sample data**, or go to **Import** and paste `test/sample-history.txt` yourself. It's synthetic data in the same format as my notebook, not my log; the button moves its dates so the last workout was yesterday.
 
 `node build.mjs` writes a single self-contained `ppl-tracker.html`, which is what lives on my phone for offline use.
 
@@ -36,3 +38,4 @@ node --test
 - The importer's vocabulary is Portuguese on purpose, it exists to read my notes. Common English gym terms map into it (bench press, lat pulldown, skull crusher, leg press...). Ids and history keep the Portuguese words; `js/names.js` only translates what's printed, otherwise sets logged in the app and imported ones would end up in two histories.
 - Everything is stored in `localStorage`. Sync needs a fine-grained token with Contents read/write on **one** private repo; the app refuses to sync to a public one.
 - `_headers` is the CSP used on Cloudflare Pages. With it, the only place the page can send data to is api.github.com.
+- Icons are [Solar](https://icon-sets.iconify.design/solar/) by 480 Design (CC BY 4.0). Font is Plus Jakarta Sans (OFL, `fonts/OFL.txt`).
