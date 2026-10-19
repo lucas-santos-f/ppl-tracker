@@ -2,7 +2,7 @@
 
 The workout tracker I use at the gym. It's built around how I actually log training: a messy note in iPhone Notes, in Portuguese, a year long. The app parses that notebook, suggests today's loads from the history and logs the session.
 
-Live demo: https://lucas-santos-f.github.io/ppl-tracker/ (starts empty, tap **Try it with sample data**).
+Live demo: https://repbook.pages.dev (starts empty, tap **Try it with sample data**).
 
 <p>
   <img src="docs/today.jpg" width="250" alt="today">
