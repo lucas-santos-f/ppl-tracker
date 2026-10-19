@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
@@ -17,7 +17,7 @@
 
   <section id="view-today" class="view active">
     <div class="topbar">
-      <h1>Treino de hoje</h1>
+      <h1>Today</h1>
       <div class="top-right">
         <button class="sync-chip" id="sync-chip" type="button" hidden></button>
         <span class="meta" id="today-date"></span>
@@ -28,7 +28,7 @@
 
   <section id="view-dash" class="view">
     <div class="topbar">
-      <h1>Progresso</h1>
+      <h1>Progress</h1>
       <span class="meta" id="dash-range"></span>
     </div>
     <div id="dash-content"></div>
@@ -44,39 +44,40 @@
 
   <section id="view-hist" class="view">
     <div class="topbar">
-      <h1>Histórico</h1>
+      <h1>History</h1>
       <span class="meta" id="hist-count"></span>
     </div>
     <div id="hist-content"></div>
   </section>
 
   <section id="view-import" class="view">
-    <div class="topbar"><h1>Importar histórico</h1></div>
+    <div class="topbar"><h1>Import history</h1></div>
     <p class="hint" style="padding-top:0">
-      Cole aqui o texto do bloco de notas do iPhone — do jeito que está.
-      Datas em <b>13/08</b>, séries em <b>30kg 10</b>, drops e rest-pause são
-      reconhecidos automaticamente.
+      Paste the notes as they are. Dates like <b>13/08</b> (day/month), sets like
+      <b>30kg 10</b>; drops and rest-pause are picked up on their own. It was
+      written for my notebook, which is in Portuguese, and also knows the common
+      English names.
     </p>
     <textarea class="paste" id="paste" spellcheck="false" autocapitalize="off"
-      placeholder="13/08&#10;Sup reto barra&#10;25kg 10&#10;30kg 10&#10;30kg 8 Drop 20kg 10&#10;&#10;Abd inferior elev&#10;14&#10;14"></textarea>
-    <button class="btn primary" id="btn-preview">Analisar texto</button>
+      placeholder="13/08&#10;Bench press&#10;25kg 10&#10;30kg 10&#10;30kg 8 Drop 20kg 10&#10;&#10;Lateral raise&#10;12kg 12&#10;12kg 10"></textarea>
+    <button class="btn primary" id="btn-preview">Read text</button>
     <div id="import-preview"></div>
   </section>
 
   <section id="view-settings" class="view">
-    <div class="topbar"><h1>Ajustes</h1></div>
+    <div class="topbar"><h1>Settings</h1></div>
     <div id="settings-content"></div>
   </section>
 
 </div>
 
 <nav class="tabbar" role="tablist">
-  <button role="tab" data-view="today"    aria-selected="true"><span class="ico" data-icon="dumbbell"></span>Hoje</button>
-  <button role="tab" data-view="dash"     aria-selected="false"><span class="ico" data-icon="trend"></span>Progresso</button>
+  <button role="tab" data-view="today"    aria-selected="true"><span class="ico" data-icon="dumbbell"></span>Today</button>
+  <button role="tab" data-view="dash"     aria-selected="false"><span class="ico" data-icon="trend"></span>Progress</button>
   <button role="tab" data-view="vol"      aria-selected="false"><span class="ico" data-icon="layers"></span>Volume</button>
-  <button role="tab" data-view="hist"     aria-selected="false"><span class="ico" data-icon="clock"></span>Histórico</button>
-  <button role="tab" data-view="import"   aria-selected="false"><span class="ico" data-icon="paste"></span>Importar</button>
-  <button role="tab" data-view="settings" aria-selected="false"><span class="ico" data-icon="sliders"></span>Ajustes</button>
+  <button role="tab" data-view="hist"     aria-selected="false"><span class="ico" data-icon="clock"></span>History</button>
+  <button role="tab" data-view="import"   aria-selected="false"><span class="ico" data-icon="paste"></span>Import</button>
+  <button role="tab" data-view="settings" aria-selected="false"><span class="ico" data-icon="sliders"></span>Settings</button>
 </nav>
 
 <div id="toast"></div>

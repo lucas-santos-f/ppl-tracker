@@ -112,7 +112,7 @@ export function parseHistory(text, opts = {}) {
         const prev = session.exercises[session.exercises.length - 1];
         if (prev) { exercise = session.exercises.pop(); }
         else {
-          warnings.push({ line: lineNo, text: rawLine.trim(), reason: 'série sem exercício acima' });
+          warnings.push({ line: lineNo, text: rawLine.trim(), reason: 'set with no exercise above it' });
           continue;
         }
       }
@@ -294,7 +294,7 @@ function resolveYears(lines, defaultYear, warnings) {
           warnings.push({
             line: cur.lineNo,
             text: `${pad2(cur.day)}/${pad2(cur.month)}`,
-            reason: 'mês fora da sequência — provável erro de digitação, ano mantido',
+            reason: 'month out of sequence, probably a typo, year kept',
           });
         }
       }
@@ -330,7 +330,7 @@ function fixOutliers(found, out, warnings) {
     warnings.push({
       line: found[i].lineNo,
       text: `${pad2(found[i].day)}/${pad2(found[i].month)}`,
-      reason: `fora da ordem cronológica — lida como ${fixed}`,
+      reason: `out of chronological order, read as ${fixed}`,
     });
     out.set(found[i].lineNo, fixed);
   }

@@ -71,8 +71,8 @@ export function techniqueLabel(type) {
 }
 
 export function techniqueHint(type) {
-  if (type === 'cluster') return 'A série é quebrada em mini-blocos com pausas curtas (ex.: 3+3+3 com 15s).';
-  if (type === 'drop') return 'Chegou na falha, tirou carga na hora e continuou.';
-  if (type === 'rest-pause') return 'Falhou, descansou poucos segundos e completou mais repetições.';
+  if (type === 'cluster') return 'The set is broken into mini-blocks with short rests (e.g. 3+3+3 with 15s).';
+  if (type === 'drop') return 'Hit failure, stripped weight right away and kept going.';
+  if (type === 'rest-pause') return 'Failed, rested a few seconds and squeezed out more reps.';
   return '';
 }

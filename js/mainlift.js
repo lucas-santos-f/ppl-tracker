@@ -12,9 +12,9 @@ const s = (pct, reps, extra = {}) => ({ pct, reps, ...extra });
 
 const SCHEMES = {
   A: {
-    label: '3×3 pesado',
+    label: '3×3 heavy',
     warmup: [s(0.40, 8), s(0.55, 5), s(0.70, 3), s(0.80, 1)],
-    work: [s(0.85, 3), s(0.85, 3), s(0.85, 3, { amrap: true, label: 'máx. reps — pare 1 antes de falhar' })],
+    work: [s(0.85, 3), s(0.85, 3), s(0.85, 3, { amrap: true, label: 'max reps, stop 1 short of failure' })],
   },
   B: {
     label: '4×5',
@@ -23,27 +23,27 @@ const SCHEMES = {
   },
   // true 1RM attempt, only for lifts where technique is solid (bench)
   real: {
-    label: 'Teste de 1RM',
+    label: '1RM test',
     warmup: [s(0.40, 5), s(0.60, 3), s(0.75, 2), s(0.85, 1), s(0.92, 1)],
-    work: [s(1.00, 1, { label: 'tentativa' }), s(1.03, 1, { label: 'só se a anterior subiu fácil' })],
+    work: [s(1.00, 1, { label: 'attempt' }), s(1.03, 1, { label: 'only if the last one moved easily' })],
   },
   estimated: {
-    label: 'Teste de 1RM estimado',
+    label: 'Estimated 1RM test',
     warmup: [s(0.40, 5), s(0.60, 3), s(0.75, 2), s(0.85, 1)],
-    work: [s(0.90, 3, { amrap: true, label: 'máx. reps (até 5), sem falhar' })],
+    work: [s(0.90, 3, { amrap: true, label: 'max reps (up to 5), no failure' })],
   },
 };
 
 const CALIBRATION = {
-  label: 'Calibração',
+  label: 'Calibration',
   warmup: [
-    s(null, 10, { label: 'barra vazia' }),
-    s(null, 5, { label: 'carga leve' }),
-    s(null, 3, { label: 'carga média' }),
+    s(null, 10, { label: 'empty bar' }),
+    s(null, 5, { label: 'light' }),
+    s(null, 3, { label: 'medium' }),
   ],
   work: [
-    s(null, 5, { label: '5 pesadas, sobrando ~2 reps' }),
-    s(null, 5, { label: 'mesma carga' }),
+    s(null, 5, { label: 'heavy 5, ~2 reps left in the tank' }),
+    s(null, 5, { label: 'same load' }),
   ],
 };
 

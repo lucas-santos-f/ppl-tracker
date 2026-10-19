@@ -210,8 +210,8 @@ export const db = {
 
   restorePoint(i) {
     const p = readPoints()[i];
-    if (!p) return { ok: false, error: 'ponto não encontrado' };
-    snapshot('antes de restaurar um ponto anterior');
+    if (!p) return { ok: false, error: 'restore point not found' };
+    snapshot('before restoring an earlier point');
     const state = read();
     restoreData(state, p.data);
     return write(state, 'h');
@@ -236,21 +236,21 @@ export const db = {
   setProgramEditUndone(id, undone) {
     const state = read();
     const e = state.programEdits.find((x) => x.id === id);
-    if (!e) return { ok: false, error: 'alteração não encontrada' };
+    if (!e) return { ok: false, error: 'change not found' };
     e.undone = !!undone;
     e.updatedAt = nowISO();
     return write(state, 'h');
   },
 
   replaceSessions(sessions) {
-    snapshot('antes de substituir o histórico');
+    snapshot('before replacing the history');
     const state = read();
     replaceAllSessions(state, sessions);
     return write(state, 'h');
   },
 
   mergeSessions(incoming) {
-    snapshot('antes de importar texto');
+    snapshot('before importing text');
     const state = read();
     const now = nowISO();
     const byDate = new Map(state.sessions.filter((s) => s.date).map((s) => [s.date, s]));
@@ -302,7 +302,7 @@ export const db = {
   updateSession(date, session) {
     const state = read();
     const i = state.sessions.findIndex((s) => s.date === date);
-    if (i < 0) return { ok: false, error: 'treino não encontrado' };
+    if (i < 0) return { ok: false, error: 'workout not found' };
     const previous = state.sessions[i];
     state.sessions[i] = { ...previous, ...session, date, updatedAt: nowISO() };
     state.sessions.sort(byDateAsc);
@@ -311,7 +311,7 @@ export const db = {
   },
 
   restoreSession(previous) {
-    if (!previous || !previous.date) return { ok: false, error: 'versão anterior ausente' };
+    if (!previous || !previous.date) return { ok: false, error: 'previous version missing' };
     const state = read();
     const i = state.sessions.findIndex((s) => s.date === previous.date);
     if (i >= 0) state.sessions[i] = { ...previous, updatedAt: nowISO() };
@@ -324,7 +324,7 @@ export const db = {
   deleteSession(date) {
     const state = read();
     const i = state.sessions.findIndex((s) => s.date === date);
-    if (i < 0) return { ok: false, error: 'treino não encontrado' };
+    if (i < 0) return { ok: false, error: 'workout not found' };
     const previous = state.sessions[i];
     state.sessions.splice(i, 1);
     state.deletedSessions[date] = nowISO();
@@ -337,9 +337,9 @@ export const db = {
     const state = read();
     if (!fromId || !to?.id || !to?.name) return { ok: false, error: 'dados incompletos' };
     if (!state.sessions.some((s) => (s.exercises || []).some((e) => e.id === fromId))) {
-      return { ok: false, error: 'exercício não encontrado no histórico' };
+      return { ok: false, error: 'exercise not found in the history' };
     }
-    snapshot('antes de renomear um exercício');
+    snapshot('before renaming an exercise');
 
     const now = nowISO();
     const previous = structuredClone(state.sessions);
@@ -370,7 +370,7 @@ export const db = {
   },
 
   restoreSessions(previous) {
-    if (!Array.isArray(previous)) return { ok: false, error: 'histórico anterior ausente' };
+    if (!Array.isArray(previous)) return { ok: false, error: 'previous history missing' };
     const state = read();
     state.sessions = structuredClone(previous);
     return write(state, 'h');
@@ -399,8 +399,8 @@ export const db = {
 
   importJSON(json) {
     const data = typeof json === 'string' ? JSON.parse(json) : json;
-    if (!data || !Array.isArray(data.sessions)) throw new Error('Backup inválido: falta o campo "sessions".');
-    snapshot('antes de restaurar um arquivo de backup');
+    if (!data || !Array.isArray(data.sessions)) throw new Error('Invalid backup: the "sessions" field is missing.');
+    snapshot('before restoring a backup file');
 
     const state = read();
     restoreData(state, data);
@@ -408,7 +408,7 @@ export const db = {
   },
 
   clear() {
-    snapshot('antes de apagar tudo');
+    snapshot('before deleting everything');
     localStorage.removeItem(KEY);
   },
 
@@ -528,7 +528,7 @@ export const db = {
     if (!skipDraft && remote.draft) draftChanged = mergeDraftInto(state, { draft: remote.draft });
 
     const changed = syncView(pre) !== syncView(state) || draftChanged;
-    if (overwritten || removed) snapshot('antes de receber mudanças do outro aparelho', pre);
+    if (overwritten || removed) snapshot('before taking changes from the other phone', pre);
 
     if (syncView(state) !== syncView(remote)) { if (state.rev === state.pushedRev) state.rev++; }
     else state.pushedRev = state.rev;

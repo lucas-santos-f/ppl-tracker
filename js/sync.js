@@ -32,23 +32,23 @@ const fileUrl = (repo, path) => `${API}/repos/${repo}/contents/${path.split('/')
 
 /** Check the token can see the repo and that the repo is private. */
 export async function syncVerify({ repo, token }) {
-  if (!repo || !repo.includes('/')) throw new SyncError('Repositório deve ser "usuario/nome-do-repo".', 'bad_repo');
-  if (!token) throw new SyncError('Cole o token do GitHub.', 'no_token');
+  if (!repo || !repo.includes('/')) throw new SyncError('Repo has to look like "owner/repo-name".', 'bad_repo');
+  if (!token) throw new SyncError('Paste the GitHub token.', 'no_token');
 
   let res;
   try {
     res = await fetch(`${API}/repos/${repo}`, { headers: headers(token), cache: 'no-store' });
   } catch {
-    throw new SyncError('Sem conexão com o GitHub agora.', 'network');
+    throw new SyncError("Can't reach GitHub right now.", 'network');
   }
 
-  if (res.status === 401) throw new SyncError('Token inválido, expirado ou sem acesso a este repositório.', 'auth');
-  if (res.status === 404) throw new SyncError('Repositório não encontrado (ou o token não alcança ele).', 'not_found');
+  if (res.status === 401) throw new SyncError('Token is invalid, expired or has no access to this repo.', 'auth');
+  if (res.status === 404) throw new SyncError("Repo not found (or the token can't see it).", 'not_found');
   if (!res.ok) throw new SyncError(`GitHub respondeu ${res.status}.`, 'http');
 
   const data = await res.json();
   if (data.private === false) {
-    throw new SyncError('Este repositório é PÚBLICO. Use um repositório privado — crie um novo ou torne este privado antes de continuar.', 'public_repo');
+    throw new SyncError('This repo is PUBLIC. Use a private one: create a new repo or make this one private first.', 'public_repo');
   }
   return { ok: true, fullName: data.full_name };
 }
@@ -64,12 +64,12 @@ export async function syncPull({ repo, path, token, etag }) {
   try {
     res = await fetch(fileUrl(repo, path), { headers: h, cache: 'no-store' });
   } catch {
-    throw new SyncError('Sem conexão com o GitHub agora.', 'network');
+    throw new SyncError("Can't reach GitHub right now.", 'network');
   }
 
   if (res.status === 304) return { notModified: true };
   if (res.status === 404) return { data: null, sha: null, etag: null };
-  if (res.status === 401) throw new SyncError('Token inválido ou expirado.', 'auth');
+  if (res.status === 401) throw new SyncError('Token is invalid or expired.', 'auth');
   if (!res.ok) throw new SyncError(`Falha ao baixar (${res.status}).`, 'http');
 
   const json = await res.json();
@@ -86,7 +86,7 @@ export async function syncPull({ repo, path, token, etag }) {
     }
     return { data: JSON.parse(text), sha: json.sha, etag: res.headers.get('ETag') };
   } catch {
-    throw new SyncError('O arquivo no GitHub não é um JSON válido.', 'bad_data');
+    throw new SyncError('The file on GitHub is not valid JSON.', 'bad_data');
   }
 }
 
@@ -114,15 +114,15 @@ export async function syncPush({ repo, path, token, data, sha, keepalive = false
       keepalive,
     });
   } catch {
-    throw new SyncError('Sem conexão com o GitHub agora.', 'network');
+    throw new SyncError("Can't reach GitHub right now.", 'network');
   }
 
   // 422 = the file got created by the other device and we sent no sha
   if (res.status === 409 || res.status === 422) {
-    throw new SyncError('O arquivo no GitHub mudou no meio do caminho.', 'conflict');
+    throw new SyncError('The file on GitHub changed in the meantime.', 'conflict');
   }
-  if (res.status === 401) throw new SyncError('Token inválido ou expirado.', 'auth');
-  if (res.status === 403) throw new SyncError('O token não tem permissão de escrita, ou o GitHub limitou o uso por agora.', 'forbidden');
+  if (res.status === 401) throw new SyncError('Token is invalid or expired.', 'auth');
+  if (res.status === 403) throw new SyncError('The token has no write access, or GitHub is rate limiting for now.', 'forbidden');
   if (!res.ok) throw new SyncError(`Falha ao enviar (${res.status}).`, 'http');
 
   const json = await res.json();

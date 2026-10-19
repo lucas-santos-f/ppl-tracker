@@ -11,6 +11,9 @@
 //   bodyweight      no target load, progress by volume
 //   alts            fixed swap options shown in the card's picker
 //
+// name and hist stay Portuguese, they're matched against the notebook. js/names.js
+// turns them into English for the screen.
+//
 // hist: string -> exact name in the imported history, null -> new exercise (finds
 // history only under its own name), absent -> fuzzy match. Declared matches exist
 // because fuzzy matching gets it wrong exactly where it matters: "Remada Alta"
@@ -31,13 +34,13 @@ export const PROGRAM = {
     label: 'Push',
     exercises: [
       // main lift opens both days: A = 3×3 @ 85%, B = 4×5 @ 75%
-      { part: 'Lift principal', name: 'Supino Reto Barra', hist: 'Supino Reto Barra',
+      { part: 'Main lift', name: 'Supino Reto Barra', hist: 'Supino Reto Barra',
         main: { test: 'real' },
         alts: [{ name: 'Supino Reto Barra com Cotoveleira', hist: null, main: true }] },
 
       // the "com Cotoveleira" (elbow sleeves) versions keep their own history, the sleeves
       // change what can be pressed and mixing them would skew both 1RMs
-      { part: 'Peito',    name: 'Supino Inclinado Barra', hist: 'Supino Inclinado Barra',
+      { part: 'Chest',    name: 'Supino Inclinado Barra', hist: 'Supino Inclinado Barra',
         repRange: { B: [5, 8] },
         alts: [
           { name: 'Supino Inclinado Barra com Cotoveleira',   hist: null },
@@ -46,18 +49,18 @@ export const PROGRAM = {
           { name: 'Supino Inclinado Máquina com Cotoveleira', hist: null },
         ] },
 
-      { part: 'Peito',    name: 'Crossover Peito Superior', hist: 'Crossover Baixa Cima', only: 'A' },
+      { part: 'Chest',    name: 'Crossover Peito Superior', hist: 'Crossover Baixa Cima', only: 'A' },
 
-      { part: 'Peito',    name: 'Voador',                          hist: 'Voador',
+      { part: 'Chest',    name: 'Voador',                          hist: 'Voador',
         alts: [{ name: 'Crossover Medial', hist: 'Crossover Medial' }] },
 
       // one shoulder exercise a day: lateral raise on A, press on B
-      { part: 'Ombro',    name: 'Elevação Lateral Máquina Sentado', hist: 'Elevação Lateral Máquina Sentado',
-        only: 'A', alert: 'Atenção à execução controlada' },
-      { part: 'Ombro',    name: 'Desenvolvimento Máquina Amarela', hist: 'Desenvolvimento Máquina Amarela',
+      { part: 'Shoulders', name: 'Elevação Lateral Máquina Sentado', hist: 'Elevação Lateral Máquina Sentado',
+        only: 'A', alert: 'Slow and controlled' },
+      { part: 'Shoulders', name: 'Desenvolvimento Máquina Amarela', hist: 'Desenvolvimento Máquina Amarela',
         only: 'B' },
 
-      { part: 'Trapézio', name: 'Remada Alta', hist: null },
+      { part: 'Traps', name: 'Remada Alta', hist: null },
 
       // weighted version has its own history, reps with a plate don't compare with bodyweight reps
       { part: 'Core', name: 'Abdômen Inferior (Elevação de Pernas)',
@@ -73,36 +76,36 @@ export const PROGRAM = {
     label: 'Pull',
     exercises: [
       // no 1RM test on deadlift until technique is automatic, estimated only
-      { part: 'Lift principal', name: 'Levantamento Terra', hist: null,
+      { part: 'Main lift', name: 'Levantamento Terra', hist: null,
         main: { test: 'estimated' },
-        alert: 'Coluna neutra e barra colada na perna — se a lombar arredondar, a série acabou' },
+        alert: 'Neutral spine, bar against the legs. If the lower back rounds, the set is over' },
 
       // one vertical pull a day right after the deadlift: pulldown on A, pull-ups on B.
       // Only one passes the variant filter, so it stays the first exercise after the lift
-      { part: 'Dorsal', name: 'Puxada Alta', hist: 'Puxada Alta', only: 'A' },
+      { part: 'Lats', name: 'Puxada Alta', hist: 'Puxada Alta', only: 'A' },
       {
-        part: 'Dorsal', name: 'Barra Fixa (Pegada Aberta)', hist: 'Barra Fixa Aberta Fechada',
+        part: 'Lats', name: 'Barra Fixa (Pegada Aberta)', hist: 'Barra Fixa Aberta Fechada',
         only: 'B', bodyweight: true, setsDelta: -1,
-        note: 'baby reps, sem rest — última série pegada fechada',
+        note: 'baby reps, no rest, last set close grip',
       },
 
       // pull-ups have no target load, so on Pull B the heavy block is the dumbbell row
-      { part: 'Remada', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral',
+      { part: 'Back', name: 'Serrote Unilateral com Halter', hist: 'Serrote Unilateral',
         repRange: { B: [5, 8] }, setsDelta: { B: -1 } },
-      { part: 'Dorsal', name: 'Remada Cavalo Peito no Banco',  hist: 'Remada Cavalo Peito Banco' },
-      { part: 'Ombro post.', name: 'Peck Deck Invertido',      hist: 'Voador Invertido', alt: 'Y-Raise',
+      { part: 'Back', name: 'Remada Cavalo Peito no Banco',  hist: 'Remada Cavalo Peito Banco' },
+      { part: 'Rear delts', name: 'Peck Deck Invertido',      hist: 'Voador Invertido', alt: 'Y-Raise',
         alts: [
           { name: 'Y Raise',                    hist: 'Y Raise' },
           { name: 'Crucifixo Reverso no Banco', hist: 'Posterior Ombro Halter Peito Banco' },
         ] },
 
-      { part: 'Ombro post.', name: 'Face Pull', hist: null, only: 'B', fixedSets: 3 },
-      { part: 'Tríceps', name: 'Tríceps Francês Sentado Halter', hist: 'Tríceps Francês Halter Sentado',
+      { part: 'Rear delts', name: 'Face Pull', hist: null, only: 'B', fixedSets: 3 },
+      { part: 'Triceps', name: 'Tríceps Francês Sentado Halter', hist: 'Tríceps Francês Halter Sentado',
         alts: TRICEPS_ALTS },
-      { part: 'Tríceps', name: 'Tríceps Barra Reta',             hist: 'Tríceps Barra Reta',
+      { part: 'Triceps', name: 'Tríceps Barra Reta',             hist: 'Tríceps Barra Reta',
         alts: TRICEPS_ALTS },
       { part: 'Cardio',  name: 'Escada ou Esteira', hist: null, cardio: true,
-        logStyle: 'minutes', fixedSets: 1, note: 'registre apenas os minutos feitos' },
+        logStyle: 'minutes', fixedSets: 1, note: 'log the minutes only' },
     ],
   },
 
@@ -112,40 +115,40 @@ export const PROGRAM = {
       // histExact is required here: fuzzy matching sent Tradicional to "Agachamento
       // Livre Frontal" (2 of 3 words) and the card said Tradicional while the sets
       // were stored under Frontal's id
-      { part: 'Lift principal', name: 'Agachamento Livre Tradicional', hist: 'Agachamento Livre Tradicional',
+      { part: 'Main lift', name: 'Agachamento Livre Tradicional', hist: 'Agachamento Livre Tradicional',
         histExact: true,
         main: { test: 'estimated' },
-        alert: 'Pegada bem aberta · anilha no chão, só um passo para trás' },
+        alert: 'Very wide grip · plate on the floor, just one step back' },
 
-      { part: 'Quadríceps', name: 'Agachamento Hack',   hist: 'Agachamento Hack',
-        repRange: { B: [5, 8] }, setsDelta: -1, alert: 'Atenção à execução controlada',
+      { part: 'Quads', name: 'Agachamento Hack',   hist: 'Agachamento Hack',
+        repRange: { B: [5, 8] }, setsDelta: -1, alert: 'Slow and controlled',
         alts: [
           { name: 'Agachamento Livre Frontal', hist: 'Agachamento Livre Frontal',
-            alert: 'Pegada olímpica (2 dedos) · anilha no chão, só um passo para trás' },
+            alert: 'Olympic grip (2 fingers) · plate on the floor, just one step back' },
         ] },
 
-      { part: 'Quadríceps', name: 'Agachamento Pêndulo', hist: 'Agachamento Pêndulo', only: 'B' },
+      { part: 'Quads', name: 'Agachamento Pêndulo', hist: 'Agachamento Pêndulo', only: 'B' },
 
       // knee isolation: heavy low reps just beat up the joint, 8-10 on both days
-      { part: 'Quadríceps', name: 'Cadeira Extensora', hist: 'Extensora',
+      { part: 'Quads', name: 'Cadeira Extensora', hist: 'Extensora',
         repRange: { A: [8, 10], B: [8, 10] },
-        note: 'suba reto para cima, sem fazer arco' },
+        note: 'drive straight up, no arc' },
 
       // every third leg day swaps leg curl for stiff-legged deadlift
-      { part: 'Posterior', name: 'Cadeira Flexora', hist: 'Flexora', unlessEveryThird: true,
-        note: 'pino no último nível, o mais baixo' },
-      { part: 'Posterior', name: 'Stiff',           hist: 'Stiff',   onlyEveryThird: true },
+      { part: 'Hamstrings', name: 'Cadeira Flexora', hist: 'Flexora', unlessEveryThird: true,
+        note: 'pin on the last notch, the lowest one' },
+      { part: 'Hamstrings', name: 'Stiff',           hist: 'Stiff',   onlyEveryThird: true },
 
-      { part: 'Panturrilha', name: 'Panturrilha Máquina', hist: 'Panturrilha',
+      { part: 'Calves', name: 'Panturrilha Máquina', hist: 'Panturrilha',
         setsDelta: 2, forceTechniques: [{ pos: -1, type: 'drop' }],
-        alert: 'Não jogue o peso na descida — se precisar, baixe a carga.' },
+        alert: "Don't drop the weight on the way down, lower the load if needed." },
 
-      { part: 'Glúteo', name: 'Elevação Pélvica', hist: null },
+      { part: 'Glutes', name: 'Elevação Pélvica', hist: null },
 
       // extra abs on Legs B only
       { part: 'Core', name: 'Abdômen Superior Máquina Vermelha', hist: 'Abdominal Máquina Superior',
         only: 'B', fixedSets: 4,
-        note: 'crunch curto e reto: costelas em direção ao quadril, sem girar nem inclinar o tronco (mais reto do abdômen, menos oblíquo)',
+        note: 'short straight crunch: ribs toward the hips, no twisting or leaning (more rectus, less obliques)',
         alts: [{ name: 'Abdômen Superior no Chão', hist: null, bodyweight: true }] },
     ],
   },
@@ -155,11 +158,11 @@ export const PROGRAM = {
 export const DAILY = [
   {
     part: 'Core', name: 'Vácuo Abdominal', hist: null, daily: true,
-    logStyle: 'minutes', fixedSets: 1, note: '5 minutos de manhã, em jejum',
+    logStyle: 'minutes', fixedSets: 1, note: '5 minutes in the morning, before eating',
   },
   {
-    part: 'Mobilidade', name: 'Alongamento de Flexor de Quadril', hist: null, daily: true,
-    logStyle: 'seconds', fixedSets: 2, note: '60–90s cada lado, 2x',
+    part: 'Mobility', name: 'Alongamento de Flexor de Quadril', hist: null, daily: true,
+    logStyle: 'seconds', fixedSets: 2, note: '60–90s each side, 2x',
   },
   { part: 'Core', name: 'Dead Bug',    hist: null, daily: true, logStyle: 'reps',    fixedSets: 2 },
   { part: 'Core', name: 'Hollow Hold', hist: null, daily: true, logStyle: 'seconds', fixedSets: 2 },

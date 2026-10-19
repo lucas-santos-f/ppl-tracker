@@ -22,7 +22,7 @@ export const CYCLE = [
 ];
 
 export const SLOT_LABEL = { push: 'Push', pull: 'Pull', legs: 'Legs' };
-export const VARIANT_LABEL = { A: 'Treino A', B: 'Treino B' };
+export const VARIANT_LABEL = { A: 'Day A', B: 'Day B' };
 
 // past sessions of the same slot looked at to build the day
 const TEMPLATE_LOOKBACK = 4;
@@ -113,7 +113,7 @@ export function workoutForPosition(state, opts = {}) {
   // item.alts -> fixed list, always shown (even with no history). No alts -> up to
   // MAX_VARIANTS suggestions from history. opts.extraAlts -> one-off swaps picked
   // in the app for today, added on top.
-  const NO_VARY_PART = new Set(['Core', 'Mobilidade', 'Cardio']);
+  const NO_VARY_PART = new Set(['Core', 'Mobility', 'Cardio']);
   const MAX_DECLARED_ALTS = 8;
   const extraAlts = opts.extraAlts || {};
   const exercises = items.map(({ item, found, main }) => {
@@ -193,7 +193,7 @@ export function workoutForPosition(state, opts = {}) {
 // cues for a whole family of exercises: any pulldown variation, machines included,
 // gets the range-of-motion reminder. A note in the program always wins.
 const AUTO_NOTES = [
-  [/puxada/i, 'Amplitude 100%: puxe até quase encostar no peito — mesmo que tenha que baixar a carga.'],
+  [/puxada/i, 'Full range: pull until the bar almost touches the chest, even if the load has to come down.'],
 ];
 
 function autoNote(name) {
