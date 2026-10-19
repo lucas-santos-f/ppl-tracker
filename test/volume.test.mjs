@@ -31,6 +31,6 @@ test('bodyweight compares reps', () => {
 test('formatting', () => {
   assert.equal(fmtPct(7.6), '+8%');
   assert.equal(fmtPct(-0.2), '=');
-  assert.equal(fmtVolume(12400), '12,4t');
+  assert.equal(fmtVolume(12400), '12.4t');
   assert.equal(fmtVolume(840), '840kg');
 });

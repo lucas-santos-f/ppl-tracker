@@ -53,10 +53,10 @@ export function compareAtEqualSets(nowSets, prevSets) {
   };
 }
 
-// pt-BR style: "12,4t" for big numbers, "840kg" otherwise
+// "12.4t" for big numbers, "840kg" otherwise
 export function fmtVolume(kg) {
   if (!Number.isFinite(kg)) return '—';
-  if (kg >= 10000) return `${(kg / 1000).toFixed(1).replace('.', ',')}t`;
+  if (kg >= 10000) return `${(kg / 1000).toFixed(1)}t`;
   return `${Math.round(kg)}kg`;
 }
 
