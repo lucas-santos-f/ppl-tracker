@@ -712,6 +712,7 @@ button.tech-tag.sug { opacity: .8; border-style: dashed; }
   font-size: 9.5px; font-weight: 800; letter-spacing: .02em; line-height: 1.15;
   text-transform: uppercase; opacity: .7; align-items: end;
 }
+.vol-row.cols > span { font: inherit; letter-spacing: inherit; }  /* .n/.p/.v sizes leaked into the header */
 .vol-row.cols .p { white-space: normal; }
 
 .vol-box-day { margin-bottom: 16px; }
