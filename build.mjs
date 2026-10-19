@@ -27,6 +27,7 @@ const MODULES = [
   'js/sync.js',
   'js/icons.js',
   'js/names.js',
+  'js/demo.js',
   'js/app.js',
 ];
 
