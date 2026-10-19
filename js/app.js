@@ -1,6 +1,7 @@
 // App shell: tab router + every screen. Plain DOM and template strings, no framework.
 
 import { db } from './db.js';
+import { icon } from './icons.js';
 import { parseHistory, indexByExercise } from './parser.js';
 import { workoutForPosition, upcoming, inferStartPosition, CYCLE, SLOT_LABEL, VARIANT_LABEL,
   exerciseCatalog, identifyName, planFields, exactId } from './ppl.js';
@@ -237,7 +238,7 @@ function renderVolumeTab() {
   const sessions = volSessions(state.sessions || []);
 
   if (!sessions.length) {
-    root.innerHTML = `<div class="empty"><div class="big">🏗️</div>
+    root.innerHTML = `<div class="empty"><div class="big">${icon('layers', 'i big-i')}</div>
       <p>Sem dados ainda.<br>Importe ou registre um treino para ver o volume.</p></div>`;
     $('#vol-range').textContent = '';
     return;
@@ -364,7 +365,7 @@ function renderToday() {
   if (!state.sessions || state.sessions.length === 0) {
     root.innerHTML = `
       <div class="empty">
-        <div class="big">📋</div>
+        <div class="big">${icon('paste', 'i big-i')}</div>
         <p>Nenhum histórico ainda.<br>Importe seus treinos para começar.</p>
         <button class="btn primary" id="go-import">Importar histórico</button>
       </div>`;
@@ -408,7 +409,7 @@ function renderToday() {
   if (w.empty) {
     root.innerHTML = `
       <div class="empty">
-        <div class="big">🤔</div>
+        <div class="big">${icon('search', 'i big-i')}</div>
         <p>Nenhum treino de <b>${esc(SLOT_LABEL[w.slot])}</b> encontrado no histórico,
         então não há de onde tirar a lista de exercícios.</p>
         <button class="btn ghost" id="skip-day">Pular para o próximo treino</button>
@@ -434,26 +435,26 @@ function renderToday() {
     ${doneToday.map(finishedCard).join('')}
 
     ${w.date ? `<div class="hint pending">
-      ⚠️ Treino de <b>${esc(w.date.split('-').reverse().slice(0, 2).join('/'))}</b> ficou sem
+      ${icon('alert', 'i inline')} Treino de <b>${esc(w.date.split('-').reverse().slice(0, 2).join('/'))}</b> ficou sem
       <b>Concluir treino</b>. Confira e conclua — ele entra no histórico com a data
       de ${esc(w.date.split('-').reverse().slice(0, 2).join('/'))}.
       <button class="btn ghost" id="discard-old" type="button" style="margin-top:8px">Descartar este rascunho</button>
     </div>` : ''}
 
     <div class="day-card" data-variant="${w.variant}">
-      <p class="slot">${esc(w.title)}</p>
-      <div class="range">
-        Alvo de ${lo}–${hi} reps · ${Math.round(INTENSITY[w.variant] * 100)}% da 1RM estimada
+      <div class="day-top">
+        <span class="focus">${esc(w.subtitle)} · ${lo}–${hi} reps</span>
+        <span class="day-pct">${Math.round(INTENSITY[w.variant] * 100)}% 1RM</span>
       </div>
-      ${main ? `<div class="range" style="margin-top:6px">
+      <p class="slot">${esc(w.title)}</p>
+      ${main ? `<div class="range">
         Lift principal: <b>${esc(main.name)}</b> · ${esc(mainPlanTxt(main.activePlan))}
       </div>` : ''}
-      ${heavy ? `<div class="range" style="margin-top:6px">
+      ${heavy ? `<div class="range">
         Bloco pesado: ${esc(heavy.name)} em ${heavy.repRange[0]}–${heavy.repRange[1]} reps
       </div>` : ''}
-      <div class="range" id="ex-count" style="margin-top:6px">
-        ${done}/${w.exercises.length} exercícios registrados
-      </div>
+      <div class="day-progress"><span id="ex-bar" style="width:${pctDone(done, w.exercises.length)}%"></span></div>
+      <div class="range small" id="ex-count">${done}/${w.exercises.length} exercícios registrados</div>
     </div>
 
     <div id="day-vol">${slotVolumeHTML(w)}</div>
@@ -613,7 +614,7 @@ function exerciseCard(e, i, variant) {
       </select>
     </div>` : ''}
     <button class="link-btn ex-change" type="button">⇄ Ver todos os exercícios de ${esc(SLOT_LABEL[draft.slot] ?? 'hoje')}…</button>
-    <button class="link-btn danger-link ex-remove" type="button">🗑 Remover este exercício…</button>
+    <button class="link-btn danger-link ex-remove" type="button">${icon('trash', 'i inline')} Remover este exercício…</button>
     ${e.replacedFrom ? `<div class="hint note">Troca definitiva: entrou no lugar de <b>${esc(e.replacedFrom)}</b>.
       Para voltar, Ajustes → Alterações do programa.</div>` : ''}`;
 
@@ -656,7 +657,7 @@ function exerciseCard(e, i, variant) {
           <button class="icon-btn add-set">+ série</button>
           <button class="icon-btn fill-load" type="button" title="repete a carga nas séries vazias">⤓ mesma carga</button>
           ${e.lastSets.length ? '<button class="icon-btn fill-last" type="button" title="preenche as séries vazias com a carga, as reps e a técnica do último treino deste exercício — para não digitar tudo de novo quando o treino repete">↺ repetir o último treino</button>' : ''}
-          <button class="icon-btn bulk-tech" type="button" title="marcar técnica em várias séries">⚡ técnica</button>
+          <button class="icon-btn bulk-tech" type="button" title="marcar técnica em várias séries">${icon('bolt', 'i inline')} técnica</button>
         </div>
       </div>
     </div>`;
@@ -738,9 +739,9 @@ function exerciseComment(id) {
 function commentHTML(e) {
   const text = exerciseComment(e.exerciseId);
   return `<div class="ex-comment">${text
-    ? `<div class="hint comment">💬 ${esc(text)}</div>
+    ? `<div class="hint comment">${icon('note', 'i inline')} ${esc(text)}</div>
        <button class="link-btn comment-edit" type="button">✎ editar comentário</button>`
-    : '<button class="link-btn comment-edit" type="button">💬 adicionar comentário</button>'}</div>`;
+    : `<button class="link-btn comment-edit" type="button">${icon('note', 'i inline')} adicionar comentário</button>`}</div>`;
 }
 
 function editComment(card, id) {
@@ -1736,17 +1737,21 @@ function persistDraft() {
   });
 }
 
-// "4×5 4×5 · 75%" used to show up here (label + summary repeat the scheme)
-function mainPlanTxt(plan) {
-  const pct = plan.work[0]?.pct;
-  return pct ? `${plan.label} · ${Math.round(pct * 100)}%` : plan.label;
-}
-
 function updateProgressCount() {
   const done = draft.exercises
     .filter((e) => draft.logs[activeEx(e).exerciseId]?.sets?.some((s) => s?.reps)).length;
   const el = $('#ex-count');
   if (el) el.textContent = `${done}/${draft.exercises.length} exercícios registrados`;
+  const bar = $('#ex-bar');
+  if (bar) bar.style.width = `${pctDone(done, draft.exercises.length)}%`;
+}
+
+const pctDone = (n, total) => (total ? Math.round((n / total) * 100) : 0);
+
+// "4×5 4×5 · 75%" used to show up here (label + summary repeat the scheme)
+function mainPlanTxt(plan) {
+  const pct = plan.work[0]?.pct;
+  return pct ? `${plan.label} · ${Math.round(pct * 100)}%` : plan.label;
 }
 
 function finishWorkout() {
@@ -1903,7 +1908,7 @@ function renderDash() {
   const history = state.sessions || [];
 
   if (history.length === 0) {
-    root.innerHTML = `<div class="empty"><div class="big">📈</div>
+    root.innerHTML = `<div class="empty"><div class="big">${icon('trend', 'i big-i')}</div>
       <p>Sem dados ainda.<br>Importe o histórico para ver seu progresso.</p></div>`;
     $('#dash-range').textContent = '';
     return;
@@ -2076,7 +2081,7 @@ function renderHistory() {
   const history = state.sessions || [];
 
   if (history.length === 0) {
-    root.innerHTML = `<div class="empty"><div class="big">📊</div>
+    root.innerHTML = `<div class="empty"><div class="big">${icon('clock', 'i big-i')}</div>
       <p>Sem dados ainda.<br>Importe o histórico para ver.</p></div>`;
     $('#hist-count').textContent = '';
     return;
@@ -3062,6 +3067,7 @@ function saveBackup() {
   toast('Backup baixado');
 }
 
+$$('[data-icon]').forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
 renderToday();
 updateSyncChip();
 syncNow();
