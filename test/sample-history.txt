@@ -1,0 +1,1471 @@
+31/08
+Supino reto barra
+40kg 10
+60kg 8
+60kg 7
+60kg 4
+
+Supino inclinado barra
+25kg 8
+45kg 8
+45kg 5
+45kg 4
+
+Crossover baixa cima
+15kg 7
+15kg 7
+15kg 4
+
+Voador
+50kg 6
+50kg 5
+50kg 4 drop 7
+
+Lat raise maq sent
+35kg 5
+35kg 7
+35kg 4
+
+Desenvolvimento maq amarela
+40kg 8
+40kg 5
+40kg 6 rest 4
+
+Remada alta
+35kg 7
+35kg 5
+35kg 4
+
+Abd inferior elev
+13
+16
+14
+
+
+01/09
+Levantamento terra
+85kg 10
+105kg 6
+105kg 6
+105kg 6
+
+Barra fixa aberta e fechada
+6
+5 e 4
+5 e 3
+
+Puxada alta
+75kg 7
+75kg 4
+75kg 5 drop 7
+
+Sereote unilateral
+34kg 7 cada lado
+34kg 6
+34kg 4 drop 8
+
+Remada cavalo peito banco
+60kg 6
+60kg 5
+60kg 4 drop 8
+
+Voador invertido
+45kg 5
+45kg 5
+45kg 6
+
+Triceps frances halter sentado
+24kg 5
+24kg 7
+24kg 5
+
+Face pull
+20kg 8
+20kg 5
+20kg 6 drop 5
+
+
+02/09
+Agachamento livre tradicional
+60kg 9
+80kg 5
+80kg 4
+80kg 5
+
+Agachamento hack
+135kg 6
+135kg 6
+135kg 6 rest 3
+
+Agachamento pendulo
+90kg 6
+90kg 5
+90kg 4
+
+Extensora
+60kg 7
+60kg 4
+60kg 4
+
+Flexora
+45kg 5
+45kg 4
+45kg 5
+
+Stiff
+35kg 10
+55kg 7
+55kg 5
+55kg 4
+
+Elevação pelvica
+65kg 6
+65kg 7
+65kg 6
+
+
+03/09
+Supino reto barra
+30kg 8
+50kg 11
+50kg 10
+50kg 7
+
+Supino inclinado barra
+20kg 9
+40kg 9
+40kg 12
+40kg 9
+
+Voador
+45kg 9
+45kg 8
+45kg 10
+
+Elevação lateral maq sentado
+30kg 11
+30kg 9
+30kg 10 drop 8
+
+Desenvolvimento maq amarela
+35kg 13
+35kg 12
+35kg 7
+
+Remada alta
+30kg 9
+30kg 10
+30kg 10
+
+Abd inferior elev
+13
+14
+14
+
+
+04/09
+Levantamento terra
+75kg 9
+95kg 11
+95kg 11
+95kg 11
+
+Barra fixa aberta e fechada
+7
+6 e 3
+4 e 3
+
+Serrote unilateral
+30kg 9 cada lado
+30kg 9
+30kg 7
+
+Remada cavalo peito banco
+55kg 13
+55kg 12
+55kg 9
+
+Voador invertido
+40kg 11
+40kg 9
+40kg 7
+
+Triceps frances halter sentado
+22kg 13
+22kg 11
+22kg 9
+
+Triceps barra reta
+30kg 9
+30kg 8
+30kg 9 drop 7
+
+Face pull
+20kg 13
+20kg 10
+20kg 10 drop 6
+
+
+05/09
+Agachamento livre tradicional
+50kg 10
+70kg 10
+70kg 8
+70kg 8
+
+Agachamento hack
+120kg 9
+120kg 9
+120kg 7
+
+Agachamento pendulo
+80kg 11
+80kg 10
+80kg 8
+
+Extensora
+50kg 10
+50kg 11
+50kg 9
+
+Flexora
+40kg 12
+40kg 10
+40kg 11 drop 6
+
+Stiff
+30kg 8
+50kg 12
+50kg 12
+50kg 10
+
+Panturrilha
+85kg 9
+85kg 12
+85kg 9 drop 6
+
+Elevação pelvica
+60kg 13
+60kg 9
+60kg 8 drop 8
+
+
+07/09
+Supino reto barra
+40kg 10
+60kg 5
+60kg 4
+60kg 4
+
+Supino inclinado barra
+30kg 9
+50kg 5
+50kg 6
+50kg 4
+
+Crossover baixa cima
+15kg 5
+15kg 4
+15kg 4 drop 7
+
+Voador
+50kg 6
+50kg 6
+50kg 4
+
+Elevação lateral maq sentado
+35kg 8
+35kg 4
+35kg 4
+
+Desenvolvimento maq amarela
+40kg 6
+40kg 5
+40kg 4
+
+Remada alta
+35kg 8
+35kg 6
+35kg 4 drop 8
+
+Abd inferior elev
+11
+12
+12
+
+
+08/09
+Levantamento terra
+90kg 8
+110kg 5
+110kg 7
+110kg 5
+
+Barra fixa aberta e fechada
+6
+7 e 4
+5 e 3
+
+Puxada alta
+80kg 7
+80kg 4
+80kg 5
+
+Serrote unilateral
+34kg 8
+34kg 7
+34kg 4 rest 4
+
+Remada cavalo peito banco
+65kg 6
+65kg 7
+65kg 4
+
+Voador invertido
+45kg 5
+45kg 7
+45kg 4 drop 6
+
+Triceps barra reta
+35kg 6
+35kg 7
+35kg 4 drop 6
+
+Face pull
+25kg 5
+25kg 7
+25kg 6
+
+
+09/09
+Agachamento livre tradicional
+60kg 8
+80kg 6
+80kg 4
+80kg 5
+
+Agachamento pendulo
+90kg 6
+90kg 6
+90kg 4
+
+Extensora
+60kg 7
+60kg 5
+60kg 6 drop 6
+
+Flexora
+50kg 6
+50kg 6
+50kg 4 rest 3
+
+Stiff
+35kg 10
+55kg 5
+55kg 4
+55kg 4
+
+Panturrilha
+95kg 5
+95kg 5
+95kg 4 drop 5
+
+
+10/09
+Supino reto barra
+35kg 10
+55kg 10
+55kg 8
+55kg 11
+
+Supino inclinado barra
+25kg 10
+45kg 12
+45kg 9
+45kg 8
+
+Crossover baixa cima
+15kg 13
+15kg 12
+15kg 7 drop 8
+
+Voador
+45kg 9
+45kg 9
+45kg 8 rest 4
+
+Elevação lateral maq sentado
+30kg 9
+30kg 9
+30kg 10 rest 3
+
+Desenvolvimento maq amarela
+35kg 10
+35kg 12
+35kg 7
+
+Remada alta
+30kg 11
+30kg 11
+30kg 8
+
+Abd inferior elev
+12
+15
+15
+
+
+12/09
+Levantamento terra
+75kg 9
+95kg 12
+95kg 8
+95kg 8
+
+Barra fixa aberta e fechada
+9
+6 e 4
+4 e 2
+
+Puxada alta
+70kg 13
+70kg 11
+70kg 10
+
+Remada cavalo peito banco
+55kg 11
+55kg 12
+55kg 7
+
+Voador invertido
+40kg 11
+40kg 8
+40kg 8 drop 6
+
+Triceps frances halter sentado
+22kg 10
+22kg 10
+22kg 8
+
+Triceps barra reta
+30kg 11
+30kg 10
+30kg 8
+
+Face pull
+20kg 9
+20kg 11
+20kg 11 drop 5
+
+
+14/09
+Agachamento livre tradicional
+55kg 9
+75kg 10
+75kg 10
+75kg 10
+
+Agachamento hack
+125kg 12
+125kg 10
+125kg 11
+
+Agachamento pendulo
+85kg 11
+85kg 12
+85kg 8 drop 5
+
+Extensora
+55kg 12
+55kg 9
+55kg 7
+
+Flexora
+45kg 9
+45kg 10
+45kg 7 rest 5
+
+Stiff
+30kg 10
+50kg 13
+50kg 12
+50kg 11
+
+Panturrilha
+90kg 9
+90kg 10
+90kg 7 drop 6
+
+Elevação pelvica
+60kg 13
+60kg 9
+60kg 10 drop 6
+
+
+15/09
+Supino reto barra
+40kg 8
+60kg 5
+60kg 4
+60kg 4
+
+Supino inclinado barra
+30kg 10
+50kg 5
+50kg 6
+50kg 4
+
+Crossover baixa cima
+15kg 6
+15kg 4
+15kg 6
+
+Voador
+50kg 7
+50kg 6
+50kg 4 drop 8
+
+Elevação lateral maq sentado
+35kg 8
+35kg 5
+35kg 6
+
+Desenvolvimento maq amarela
+40kg 8
+40kg 4
+40kg 4
+
+Remada alta
+35kg 6
+35kg 5
+35kg 6
+
+Abd inferior elev
+13
+12
+15
+
+
+16/09
+Levantamento terra
+90kg 9
+110kg 8
+110kg 4
+110kg 4
+
+Barra fixa aberta e fechada
+7
+5 e 3
+5 e 3
+
+Puxada alta
+80kg 5
+80kg 4
+80kg 4 drop 6
+
+Serrote unilateral
+34kg 5
+34kg 7
+34kg 4
+
+Remada cavalo peito banco
+65kg 5
+65kg 4
+65kg 5
+
+Voador invertido
+45kg 6
+45kg 5
+45kg 5
+
+Triceps frances halter sentado
+26kg 8
+26kg 5
+26kg 4 drop 7
+
+Triceps barra reta
+35kg 8
+35kg 6
+35kg 5
+
+Face pull
+25kg 6
+25kg 6
+25kg 6 rest 5
+
+
+18/09
+Agachamento livre tradicional
+65kg 9
+85kg 8
+85kg 6
+85kg 5
+
+Agachamento hack
+140kg 6
+140kg 7
+140kg 4 rest 4
+
+Agachamento pendulo
+95kg 8
+95kg 4
+95kg 4
+
+Extensora
+60kg 6
+60kg 4
+60kg 6
+
+Flexora
+50kg 7
+50kg 4
+50kg 6
+
+Stiff
+40kg 8
+60kg 6
+60kg 5
+60kg 4
+
+Panturrilha
+100kg 8
+100kg 5
+100kg 6
+
+Elevação pelvica
+70kg 8
+70kg 4
+70kg 4 drop 6
+
+
+19/09
+Supino reto barra
+35kg 10
+55kg 9
+55kg 10
+55kg 11
+
+Supino inclinado barra
+25kg 10
+45kg 12
+45kg 9
+45kg 9
+
+Crossover baixa cima
+15kg 13
+15kg 12
+15kg 9
+
+Voador
+45kg 9
+45kg 9
+45kg 10
+
+Elevação lateral maq sentado
+30kg 9
+30kg 10
+30kg 8
+
+Desenvolvimento maq amarela
+35kg 13
+35kg 12
+35kg 8
+
+Remada alta
+30kg 11
+30kg 9
+30kg 9 rest 5
+
+Abd inferior elev
+11
+15
+13
+
+
+21/09
+Levantamento terra
+80kg 9
+100kg 11
+100kg 12
+100kg 11
+
+Barra fixa aberta e fechada
+9
+7 e 4
+6 e 3
+
+Puxada alta
+70kg 9
+70kg 9
+70kg 11
+
+Remada cavalo peito banco
+60kg 12
+60kg 9
+60kg 11 drop 7
+
+Voador invertido
+40kg 9
+40kg 12
+40kg 9
+
+Triceps frances halter sentado
+24kg 10
+24kg 11
+24kg 9
+
+Triceps barra reta
+30kg 9
+30kg 8
+30kg 10 rest 5
+
+Face pull
+20kg 12
+20kg 8
+20kg 11
+
+
+22/09
+Agachamento livre tradicional
+55kg 9
+75kg 9
+75kg 9
+75kg 11
+
+Agachamento hack
+125kg 13
+125kg 9
+125kg 7
+
+Agachamento pendulo
+85kg 13
+85kg 8
+85kg 10
+
+Flexora
+45kg 13
+45kg 8
+45kg 11 rest 5
+
+Stiff
+35kg 8
+55kg 10
+55kg 8
+55kg 10
+
+Panturrilha
+90kg 10
+90kg 8
+90kg 8
+
+Elevação pelvica
+65kg 13
+65kg 11
+65kg 10
+
+
+23/09
+Supino reto barra
+40kg 8
+60kg 7
+60kg 5
+60kg 4
+
+Supino inclinado barra
+30kg 8
+50kg 8
+50kg 4
+50kg 4
+
+Crossover baixa cima
+20kg 5
+20kg 5
+20kg 6 rest 3
+
+Voador
+55kg 8
+55kg 5
+55kg 4 drop 6
+
+Desenvolvimento maq amarela
+40kg 8
+40kg 7
+40kg 5 drop 8
+
+Remada alta
+35kg 8
+35kg 6
+35kg 4
+
+Abd inferior elev
+14
+12
+14
+
+
+24/09
+Levantamento terra
+95kg 10
+115kg 6
+115kg 4
+115kg 6
+
+Barra fixa aberta e fechada
+7
+5 e 4
+6 e 2
+
+Puxada alta
+80kg 8
+80kg 4
+80kg 5
+
+Remada cavalo peito banco
+65kg 6
+65kg 7
+65kg 4
+
+Voador invertido
+45kg 6
+45kg 4
+45kg 4
+
+Triceps frances halter sentado
+26kg 7
+26kg 7
+26kg 5 rest 5
+
+Triceps barra reta
+35kg 5
+35kg 5
+35kg 4
+
+
+26/09
+Agachamento livre tradicional
+65kg 10
+85kg 8
+85kg 7
+85kg 6
+
+Agachamento hack
+140kg 5
+140kg 6
+140kg 5
+
+Agachamento pendulo
+95kg 8
+95kg 6
+95kg 5 drop 6
+
+Extensora
+60kg 6
+60kg 4
+60kg 6 rest 3
+
+Flexora
+50kg 7
+50kg 6
+50kg 5
+
+Stiff
+40kg 8
+60kg 8
+60kg 6
+60kg 4
+
+Panturrilha
+100kg 8
+100kg 5
+100kg 5
+
+Elevação pelvica
+70kg 8
+70kg 6
+70kg 4 drop 6
+
+
+28/09
+Supino reto barra
+35kg 10
+55kg 10
+55kg 8
+55kg 11
+
+Supino inclinado barra
+25kg 9
+45kg 10
+45kg 8
+45kg 7
+
+Crossover baixa cima
+15kg 13
+15kg 9
+15kg 10 rest 3
+
+Voador
+50kg 12
+50kg 12
+50kg 10 drop 5
+
+Elevação lateral maq sentado
+30kg 9
+30kg 9
+30kg 9
+
+Desenvolvimento maq amarela
+40kg 10
+40kg 9
+40kg 9 drop 7
+
+Abd inferior elev
+12
+16
+16
+
+
+30/09
+Levantamento terra
+85kg 8
+105kg 10
+105kg 9
+105kg 10
+
+Barra fixa aberta e fechada
+6
+7 e 2
+6 e 2
+
+Puxada alta
+75kg 13
+75kg 8
+75kg 7
+
+Voador invertido
+40kg 12
+40kg 9
+40kg 8 rest 5
+
+Triceps frances halter sentado
+24kg 10
+24kg 9
+24kg 7
+
+Triceps barra reta
+30kg 11
+30kg 10
+30kg 7 drop 5
+
+Face pull
+20kg 12
+20kg 12
+20kg 10
+
+
+02/10
+Agachamento livre tradicional
+60kg 10
+80kg 10
+80kg 12
+80kg 7
+
+Agachamento hack
+130kg 12
+130kg 10
+130kg 9 rest 3
+
+Agachamento pendulo
+85kg 13
+85kg 8
+85kg 9
+
+Extensora
+55kg 13
+55kg 9
+55kg 9 drop 8
+
+Flexora
+45kg 9
+45kg 10
+45kg 7 drop 5
+
+Stiff
+35kg 8
+55kg 10
+55kg 8
+55kg 9
+
+Panturrilha
+90kg 11
+90kg 8
+90kg 8
+
+Elevação pelvica
+65kg 13
+65kg 8
+65kg 11
+
+
+03/10
+Supino reto barra
+45kg 9
+65kg 7
+65kg 5
+65kg 4
+
+Supino inclinado barra
+30kg 8
+50kg 5
+50kg 6
+50kg 4
+
+Crossover baixa cima
+20kg 8
+20kg 7
+20kg 5 rest 3
+
+Voador
+55kg 6
+55kg 4
+55kg 4
+
+Elevação lateral maq sentado
+35kg 6
+35kg 6
+35kg 5 rest 3
+
+Desenvolvimento maq amarela
+40kg 7
+40kg 5
+40kg 4 drop 8
+
+Remada alta
+35kg 7
+35kg 6
+35kg 6 drop 7
+
+Abd inferior elev
+11
+12
+14
+
+
+05/10
+Levantamento terra
+95kg 9
+115kg 7
+115kg 7
+115kg 4
+
+Barra fixa aberta e fechada
+9
+5 e 2
+4 e 2
+
+Puxada alta
+85kg 5
+85kg 6
+85kg 6
+
+Serrote unilateral
+36kg 5 cada lado
+36kg 4
+36kg 4
+
+Remada cavalo peito banco
+70kg 5
+70kg 4
+70kg 5
+
+Voador invertido
+45kg 5
+45kg 6
+45kg 4
+
+Triceps frances halter sentado
+28kg 5
+28kg 4
+28kg 6
+
+Triceps barra reta
+35kg 7
+35kg 5
+35kg 6
+
+Face pull
+25kg 7
+25kg 7
+25kg 4 drop 8
+
+
+06/10
+Agachamento livre tradicional
+70kg 8
+90kg 5
+90kg 4
+90kg 4
+
+Agachamento hack
+150kg 7
+150kg 7
+150kg 4 drop 6
+
+Agachamento pendulo
+100kg 5
+100kg 5
+100kg 4
+
+Extensora
+65kg 6
+65kg 5
+65kg 6 drop 8
+
+Flexora
+50kg 7
+50kg 7
+50kg 4 drop 8
+
+Stiff
+40kg 9
+60kg 7
+60kg 7
+60kg 4
+
+Panturrilha
+105kg 8
+105kg 6
+105kg 6 rest 5
+
+Elevação pelvica
+75kg 7
+75kg 4
+75kg 4
+
+
+07/10
+Supino reto barra
+35kg 8
+55kg 10
+55kg 9
+55kg 11
+
+Supino inclinado barra
+25kg 10
+45kg 10
+45kg 9
+45kg 7
+
+Crossover baixa cima
+15kg 12
+15kg 10
+15kg 11
+
+Voador
+50kg 10
+50kg 11
+50kg 9
+
+Elevação lateral maq sentado
+35kg 11
+35kg 8
+35kg 9 drop 5
+
+Desenvolvimento maq amarela
+40kg 12
+40kg 12
+40kg 8
+
+Remada alta
+35kg 13
+35kg 11
+35kg 9 rest 3
+
+Abd inferior elev
+12
+13
+12
+
+
+08/10
+Levantamento terra
+85kg 9
+105kg 11
+105kg 11
+105kg 10
+
+Barra fixa aberta e fechada
+8
+6 e 3
+5 e 2
+
+Puxada alta
+75kg 11
+75kg 11
+75kg 11
+
+Remada cavalo peito banco
+60kg 12
+60kg 9
+60kg 11
+
+Voador invertido
+40kg 10
+40kg 12
+40kg 10 drop 8
+
+Triceps frances halter sentado
+24kg 13
+24kg 9
+24kg 11 rest 4
+
+Triceps barra reta
+35kg 9
+35kg 9
+35kg 10 drop 5
+
+Face pull
+20kg 10
+20kg 11
+20kg 11 rest 5
+
+
+10/10
+Agachamento livre tradicional
+60kg 10
+80kg 10
+80kg 9
+80kg 10
+
+Agachamento hack
+130kg 13
+130kg 11
+130kg 7 rest 3
+
+Agachamento pendulo
+90kg 13
+90kg 12
+90kg 8
+
+Extensora
+55kg 12
+55kg 12
+55kg 11 drop 6
+
+Flexora
+45kg 11
+45kg 12
+45kg 7 drop 5
+
+Stiff
+35kg 10
+55kg 11
+55kg 12
+55kg 7
+
+Panturrilha
+95kg 12
+95kg 9
+95kg 7 drop 6
+
+Elevação pelvica
+65kg 9
+65kg 11
+65kg 7
+
+
+12/10
+Supino reto barra
+45kg 10
+65kg 7
+65kg 7
+65kg 5
+
+Supino inclinado barra
+35kg 9
+55kg 6
+55kg 7
+55kg 4
+
+Crossover baixa cima
+20kg 7
+20kg 5
+20kg 4
+
+Voador
+55kg 6
+55kg 5
+55kg 4
+
+Elevação lateral maq sentado
+40kg 8
+40kg 5
+40kg 4 rest 3
+
+Desenvolvimento maq amarela
+45kg 6
+45kg 4
+45kg 5 rest 4
+
+Remada alta
+40kg 6
+40kg 5
+40kg 6 drop 6
+
+Abd inferior elev
+15
+12
+11
+
+
+13/10
+Levantamento terra
+100kg 9
+120kg 8
+120kg 4
+120kg 4
+
+Barra fixa aberta e fechada
+6
+5 e 3
+4 e 2
+
+Serrote unilateral
+38kg 6
+38kg 5
+38kg 4 rest 3
+
+Voador invertido
+50kg 6
+50kg 6
+50kg 4
+
+Triceps frances halter sentado
+28kg 8
+28kg 5
+28kg 5
+
+Triceps barra reta
+40kg 5
+40kg 5
+40kg 4
+
+
+14/10
+Agachamento livre tradicional
+70kg 9
+90kg 5
+90kg 4
+90kg 6
+
+Agachamento pendulo
+100kg 5
+100kg 7
+100kg 5
+
+Extensora
+65kg 5
+65kg 4
+65kg 4 drop 5
+
+Flexora
+55kg 7
+55kg 6
+55kg 6
+
+Stiff
+45kg 9
+65kg 6
+65kg 5
+65kg 5
+
+Panturrilha
+105kg 7
+105kg 6
+105kg 6
+
+Elevação pelvica
+75kg 5
+75kg 5
+75kg 6 drop 6
+
+
+15/10
+Supino reto barra
+40kg 8
+60kg 9
+60kg 11
+60kg 7
+
+Supino inclinado barra
+25kg 9
+45kg 13
+45kg 12
+45kg 11
+
+Crossover baixa cima
+15kg 9
+15kg 12
+15kg 10
+
+Voador
+50kg 9
+50kg 10
+50kg 10
+
+Elevação lateral maq sentado
+35kg 12
+35kg 9
+35kg 8
+
+Remada alta
+35kg 13
+35kg 8
+35kg 8
+
+Abd inferior elev
+12
+12
+12
+
+
+16/10
+Levantamento terra
+85kg 10
+105kg 11
+105kg 9
+105kg 8
+
+Puxada alta
+75kg 9
+75kg 8
+75kg 8
+
+Serrote unilateral
+34kg 11 cada lado
+34kg 10
+34kg 9
+
+Remada cavalo peito banco
+60kg 9
+60kg 12
+60kg 9 drop 6
+
+Voador invertido
+45kg 10
+45kg 12
+45kg 11
+
+Triceps frances halter sentado
+24kg 10
+24kg 12
+24kg 11 drop 7
+
+Triceps barra reta
+35kg 10
+35kg 11
+35kg 10
+
+Face pull
+20kg 13
+20kg 9
+20kg 7
