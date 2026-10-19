@@ -446,7 +446,7 @@ function renderToday() {
         Alvo de ${lo}–${hi} reps · ${Math.round(INTENSITY[w.variant] * 100)}% da 1RM estimada
       </div>
       ${main ? `<div class="range" style="margin-top:6px">
-        Lift principal: <b>${esc(main.name)}</b> · ${esc(main.activePlan.label)} ${esc(planSummary(main.activePlan))}
+        Lift principal: <b>${esc(main.name)}</b> · ${esc(mainPlanTxt(main.activePlan))}
       </div>` : ''}
       ${heavy ? `<div class="range" style="margin-top:6px">
         Bloco pesado: ${esc(heavy.name)} em ${heavy.repRange[0]}–${heavy.repRange[1]} reps
@@ -1734,6 +1734,12 @@ function persistDraft() {
     hidden: draft.hidden || [],
     savedAt: new Date().toISOString(),
   });
+}
+
+// "4×5 4×5 · 75%" used to show up here (label + summary repeat the scheme)
+function mainPlanTxt(plan) {
+  const pct = plan.work[0]?.pct;
+  return pct ? `${plan.label} · ${Math.round(pct * 100)}%` : plan.label;
 }
 
 function updateProgressCount() {
