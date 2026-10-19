@@ -21,7 +21,7 @@ The workout tracker I use at the gym. It's built around how I actually log train
 python -m http.server 4173
 ```
 
-Open http://localhost:4173, go to **Importar** and paste `test/sample-history.txt` (synthetic data, not my log).
+Open http://localhost:4173, go to **Import** and paste `test/sample-history.txt` (synthetic data in the same format as my notebook, not my log).
 
 `node build.mjs` writes a single self-contained `ppl-tracker.html`, which is what lives on my phone for offline use.
 
@@ -33,6 +33,6 @@ node --test
 
 ## Notes
 
-- UI text and the exercise vocabulary are Portuguese on purpose: the importer exists to read my notes. Common English gym terms map into it (lat pulldown, skull crusher, leg press, seated row...).
+- The importer's vocabulary is Portuguese on purpose, it exists to read my notes. Common English gym terms map into it (bench press, lat pulldown, skull crusher, leg press...). Ids and history keep the Portuguese words; `js/names.js` only translates what's printed, otherwise sets logged in the app and imported ones would end up in two histories.
 - Everything is stored in `localStorage`. Sync needs a fine-grained token with Contents read/write on **one** private repo; the app refuses to sync to a public one.
 - `_headers` is the CSP used on Cloudflare Pages. With it, the only place the page can send data to is api.github.com.
