@@ -192,7 +192,9 @@ export function normalizeExercise(raw) {
   const id = unique.join('-');
 
   return {
-    name: titleCase(words.join(' ')),
+    // 'terra' expands to 'levantamento terra', so "Levantamento terra" came out as
+    // "Levantamento Levantamento Terra"
+    name: titleCase(words.filter((w, i) => w !== words[i - 1]).join(' ')),
     id,
     group: inferGroup(words.join(' ')),
     words,

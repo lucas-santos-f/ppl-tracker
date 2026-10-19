@@ -54,6 +54,10 @@ test('spellings collide', () => {
   assert.equal(new Set(ids).size, 1);
 });
 
+test('no doubled words', () => {
+  assert.equal(normalizeExercise('Levantamento terra').name, 'Levantamento Terra');
+});
+
 test('lat pulldown is not pulldown', () => {
   assert.notEqual(normalizeExercise('Lat pulldown').id, normalizeExercise('Pulldown').id);
 });
