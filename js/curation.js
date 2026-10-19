@@ -38,6 +38,8 @@ export const ALIASES = {
   'reto-supino': 'barra-reto-supino',
   'barra-supino': 'barra-reto-supino',
   'barra-livre-reto-supino': 'barra-reto-supino',
+  // plain "bench press" typed in English lands here too
+  'supino': 'barra-reto-supino',
 
   'baixa-polia-remada': 'baixa-remada',
 
