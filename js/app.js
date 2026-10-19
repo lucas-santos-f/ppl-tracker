@@ -3,6 +3,7 @@
 import { db } from './db.js';
 import { icon } from './icons.js';
 import { exName } from './names.js';
+import { shiftToYesterday } from './demo.js';
 import { parseHistory, indexByExercise } from './parser.js';
 import { workoutForPosition, upcoming, inferStartPosition, CYCLE, SLOT_LABEL, VARIANT_LABEL,
   exerciseCatalog, identifyName, planFields, exactId } from './ppl.js';
@@ -83,7 +84,7 @@ function updateUndoBar() {
   if (!slot) return;
   const cur = state.cyclePosition || 0;
   const last = [...undoStack].reverse().find((u) => u.pos === cur);
-  slot.innerHTML = last ? `<button class="btn ghost undo-bar" type="button">↶ Undo: ${esc(last.label)}</button>` : '';
+  slot.innerHTML = last ? `<button class="btn ghost undo-bar" type="button">${icon('undo', 'i inline')}Undo: ${esc(last.label)}</button>` : '';
   slot.firstElementChild?.addEventListener('click', () => runUndo(last));
 }
 
@@ -152,6 +153,9 @@ function fmtDate(iso) {
 
 // short form for tight spots (chart labels, the leftover draft banner)
 const fmtDay = (iso) => (iso ? `${MONTHS[iso.slice(5, 7) - 1]} ${+iso.slice(8, 10)}` : '');
+
+// "Monday, October 19" on top of the today screen
+const fmtLongDate = (d) => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
 function fmtDateTime(iso) {
   if (!iso) return '';
@@ -229,6 +233,9 @@ function compareSessions(now, prev) {
 
 const pctCls = (pct) => (pct == null ? '' : pct > 0.5 ? 'up' : pct < -0.5 ? 'down' : '');
 
+// width of the little bar under each volume row, relative to the biggest in the list
+const barPct = (v, top) => (top > 0 && v > 0 ? Math.max(3, Math.round((v / top) * 100)) : 0);
+
 const volHeadRow = (firstCol = 'day') => `
   <div class="vol-row cols">
     <span class="d">${esc(firstCol)}</span>
@@ -257,10 +264,10 @@ function renderVolumeTab() {
   // previous workout of the SAME group, Push vs Legs says nothing
   const prevOf = (s) => sessions.find((o) => o.date < s.date && o.slot === s.slot);
 
-  const exRow = (e, prevEx) => {
+  const exRow = (e, prevEx, top) => {
     const c = prevEx ? compareAtEqualSets(e.sets, prevEx.sets) : null;
     const tip = c ? `compared over ${c.usedSets} sets` : 'not in the previous workout';
-    return `<div class="vol-row">
+    return `<div class="vol-row" style="--w:${barPct(e.volume, top)}%">
       <span class="d">${esc(exName(e.name))}</span>
       <span class="n">${e.sets.length}×</span>
       <span class="v">${esc(fmtEffort(e.sets))}</span>
@@ -273,6 +280,7 @@ function renderVolumeTab() {
     const prev = prevOf(s);
     const cmp = compareSessions(s, prev);
     const byId = new Map((prev?.exercises || []).map((e) => [e.id, e]));
+    const top = Math.max(...s.exercises.map((e) => e.volume));
     const groupLabel = SLOT_LABEL[s.slot] ?? 'no group';
 
     const vs = cmp ? `${fmtPct(cmp.pct)} vs ${fmtDate(prev.date)}`
@@ -288,7 +296,7 @@ function renderVolumeTab() {
           <small class="${pctCls(cmp?.pct)}">${esc(vs)}</small>
         </div>
       </div>
-      <div class="vol">${volHeadRow('exercise')}${s.exercises.map((e) => exRow(e, byId.get(e.id))).join('')}</div>
+      <div class="vol">${volHeadRow('exercise')}${s.exercises.map((e) => exRow(e, byId.get(e.id), top)).join('')}</div>
     </div>`;
   };
 
@@ -298,7 +306,7 @@ function renderVolumeTab() {
     <div class="seg seg-4">
       ${segBtn('all', 'All')}${segBtn('push', 'Push')}${segBtn('pull', 'Pull')}${segBtn('legs', 'Legs')}
     </div>
-    <div class="legend">
+    <details class="legend"><summary>${icon('info', 'i inline')}How to read the volume</summary>
       <p><b>Volume</b> = load × reps over every working set, including what was
       done in techniques (drop set, rest-pause, cluster). Warm-ups are left out.</p>
       <p><b>+8% / −3%</b> = change against the previous workout of the same
@@ -308,7 +316,7 @@ function renderVolumeTab() {
       swapping an exercise in or out doesn't show up as a gain or a loss.</p>
       <p>Exercises <b>without load</b> (pull-ups, dips, abs) have no tonnage:
       they count total reps and stay out of the workout's kg total.</p>
-    </div>
+    </details>
     ${shown.map(card).join('')}
     ${filtered.length > shown.length
       ? `<p class="hint">Showing the latest ${shown.length} of ${filtered.length}.</p>` : ''}
@@ -326,13 +334,14 @@ function slotVolumeHTML(w) {
   const pastDays = sessions.filter((s) => s.date !== todayISO()).slice(0, VOL_SLOT_DAYS);
   if (!pastDays.length && !todayVol) return '';
 
-  const row = (label, vol, nSets, cmp, cls) => `<div class="vol-row ${cls || ''}">
+  const row = (label, vol, nSets, cmp, cls) => `<div class="vol-row ${cls || ''}" style="--w:${barPct(vol, top)}%">
     <span class="d">${esc(label)}</span>
     <span class="n">${nSets}×</span>
     <span class="v">${esc(fmtVolume(vol))}</span>
     <span class="p ${pctCls(cmp?.pct)}">${cmp ? esc(fmtPct(cmp.pct)) : ''}</span>
   </div>`;
 
+  const top = Math.max(todayVol, ...pastDays.map((s) => s.volume));
   const lines = [];
   if (todayVol > 0) {
     const prev = pastDays[0];
@@ -362,9 +371,34 @@ function slotVolumeHTML(w) {
   </div></div>`;
 }
 
+const DEMO_KEY = 'ppl-tracker:demo';
+const isDemo = () => { try { return localStorage.getItem(DEMO_KEY) === '1'; } catch { return false; } };
+
+// The live demo starts empty. This runs the made-up notebook in test/ through
+// the same importer a pasted note goes through, dates moved up to yesterday.
+async function loadDemo() {
+  let text;
+  try {
+    const res = await fetch('test/sample-history.txt');
+    if (!res.ok) throw new Error(String(res.status));
+    text = await res.text();
+  } catch {
+    toast('Could not load the sample here.', true);
+    return;
+  }
+  const res = db.mergeSessions(parseHistory(shiftToYesterday(text)).sessions);
+  if (!res.ok) { toast('Error saving: ' + res.error, true); return; }
+  db.setCyclePosition(inferStartPosition(db.load().sessions));
+  try { localStorage.setItem(DEMO_KEY, '1'); } catch { /* private mode, banner just won't show */ }
+  state = db.load();
+  draft = null;
+  toast(`Sample data · ${state.sessions.length} workouts`);
+  renderToday();
+}
+
 function renderToday() {
   const root = $('#today-content');
-  $('#today-date').textContent = fmtDate(todayISO());
+  $('#today-date').textContent = fmtLongDate(new Date());
 
   if (!state.sessions || state.sessions.length === 0) {
     root.innerHTML = `
@@ -372,10 +406,12 @@ function renderToday() {
         <div class="big">${icon('paste', 'i big-i')}</div>
         <p>No history yet.<br>Import your log to get started.</p>
         <button class="btn primary" id="go-import">Import history</button>
+        <button class="btn ghost" id="load-demo">Try it with sample data</button>
       </div>`;
 
     // no inline onclick, the CSP in _headers blocks it
     $('#go-import').addEventListener('click', () => show('import'));
+    $('#load-demo').addEventListener('click', loadDemo);
     return;
   }
 
@@ -436,6 +472,8 @@ function renderToday() {
 
   root.innerHTML = `
     <div id="undo-slot"></div>
+    ${isDemo() ? `<p class="hint demo-note">${icon('info', 'i inline')}Made-up sample workouts, not real training.
+      Settings → Delete everything clears them.</p>` : ''}
     ${doneToday.map(finishedCard).join('')}
 
     ${w.date ? `<div class="hint pending">
@@ -450,15 +488,16 @@ function renderToday() {
         <span class="focus">${esc(w.subtitle)} · ${lo}–${hi} reps</span>
         <span class="day-pct">${Math.round(INTENSITY[w.variant] * 100)}% 1RM</span>
       </div>
-      <p class="slot">${esc(w.title)}</p>
+      <div class="day-main">
+        <p class="slot">${esc(w.title)}</p>
+        ${ringHTML(done, w.exercises.length)}
+      </div>
       ${main ? `<div class="range">
         Main lift: <b>${esc(exName(main.name))}</b> · ${esc(mainPlanTxt(main.activePlan))}
       </div>` : ''}
       ${heavy ? `<div class="range">
         Heavy block: ${esc(exName(heavy.name))} at ${heavy.repRange[0]}–${heavy.repRange[1]} reps
       </div>` : ''}
-      <div class="day-progress"><span id="ex-bar" style="width:${pctDone(done, w.exercises.length)}%"></span></div>
-      <div class="range small" id="ex-count">${done}/${w.exercises.length} exercises logged</div>
     </div>
 
     <div id="day-vol">${slotVolumeHTML(w)}</div>
@@ -468,7 +507,7 @@ function renderToday() {
     </div>
 
     <button class="btn ghost add-ex-btn" id="add-ex" type="button">
-      <span class="plus">+</span> Add exercise
+      ${icon('plus', 'i inline')}Add exercise
     </button>
 
     ${done > 0 ? `<p class="hint pending">
@@ -510,7 +549,7 @@ function finishedCard(session) {
 
   return `
     <div class="day-card done-card" data-variant="${esc(session.variant || 'A')}">
-      <div class="focus">✓ Done today${session.slot ? ' · ' + esc(SLOT_LABEL[session.slot] ?? '') : ''}</div>
+      <div class="focus">${icon('check', 'i inline')}Done today${session.slot ? ' · ' + esc(SLOT_LABEL[session.slot] ?? '') : ''}</div>
       <div class="done-list">${lines}</div>
       <button class="btn ghost reopen" data-date="${esc(session.date)}" style="margin-top:12px">
         Reopen to fix
@@ -599,7 +638,7 @@ function exerciseCard(e, i, variant) {
 
   // formula asked for more than anything ever lifted on this exercise
   const cappedNote = e.capped
-    ? `<div class="hint capped">⚠︎ The formula asked for <b>${e.uncappedLoad}kg</b>, above your best
+    ? `<div class="hint capped">${icon('alert', 'i inline')}The formula asked for <b>${e.uncappedLoad}kg</b>, above your best
        of <b>${e.bestLoad}kg</b>. Capped at +10% over the best.</div>`
     : '';
 
@@ -617,7 +656,7 @@ function exerciseCard(e, i, variant) {
         <option value="__all">See every ${esc(SLOT_LABEL[draft.slot] ?? 'today')} exercise…</option>
       </select>
     </div>` : ''}
-    <button class="link-btn ex-change" type="button">⇄ See every ${esc(SLOT_LABEL[draft.slot] ?? 'today')} exercise…</button>
+    <button class="link-btn ex-change" type="button">${icon('swap', 'i inline')}See every ${esc(SLOT_LABEL[draft.slot] ?? 'today')} exercise…</button>
     <button class="link-btn danger-link ex-remove" type="button">${icon('trash', 'i inline')} Remove this exercise…</button>
     ${e.replacedFrom ? `<div class="hint note">Permanent swap: replaced <b>${esc(exName(e.replacedFrom))}</b>.
       To go back, Settings → Program changes.</div>` : ''}`;
@@ -625,7 +664,7 @@ function exerciseCard(e, i, variant) {
   return `
     <div class="ex ${isDone ? 'done' : ''} ${e.isSwapped ? 'swapped' : ''}" data-variant="${variant}" data-id="${esc(e.exerciseId)}" data-default="${esc(e.defaultId ?? e.exerciseId)}">
       <div class="ex-head">
-        <div class="check">✓</div>
+        <div class="check">${icon('check')}</div>
         <div class="ex-name">
           <div class="part">${esc(e.part ?? '')}</div>
           <div class="n">${esc(exName(e.name))}</div>
@@ -643,12 +682,12 @@ function exerciseCard(e, i, variant) {
         <div class="target">
           ${plan && e.targetLoad == null ? '<div class="kg bw">calibrate</div>' : targetHTML}
           <div class="reps">${plan ? esc(planSummary(plan))
-            : e.cardio || e.logStyle ? '' : `${e.capped ? '⚠︎ ' : ''}${lo}–${hi} reps`}</div>
+            : e.cardio || e.logStyle ? '' : `${e.capped ? icon('alert', 'i inline') : ''}${lo}–${hi} reps`}</div>
         </div>
       </div>
       <div class="ex-body">
         ${swapHTML}
-        ${e.alert ? `<div class="hint alert">⚠︎ ${esc(e.alert)}</div>` : ''}
+        ${e.alert ? `<div class="hint alert">${icon('alert', 'i inline')}${esc(e.alert)}</div>` : ''}
         ${e.note ? `<div class="hint note">${esc(e.note)}</div>` : ''}
         ${commentHTML(e)}
         ${e.matchedAs && e.matchedAs !== e.name
@@ -658,9 +697,9 @@ function exerciseCard(e, i, variant) {
         ${plan ? mainPlanHTML(e, plan) : ''}
         <div class="sets">${rows}</div>
         <div class="bulk">
-          <button class="icon-btn add-set">+ set</button>
-          <button class="icon-btn fill-load" type="button" title="copies the load into the empty sets">⤓ same load</button>
-          ${e.lastSets.length ? '<button class="icon-btn fill-last" type="button" title="fills the empty sets with the load, reps and technique from the last time you did this exercise, so a repeated workout doesn\'t need retyping">↺ repeat last workout</button>' : ''}
+          <button class="icon-btn add-set">${icon('plus', 'i inline')}set</button>
+          <button class="icon-btn fill-load" type="button" title="copies the load into the empty sets">${icon('fill', 'i inline')}same load</button>
+          ${e.lastSets.length ? '<button class="icon-btn fill-last" type="button" title="fills the empty sets with the load, reps and technique from the last time you did this exercise, so a repeated workout doesn\'t need retyping">' + icon('repeat', 'i inline') + 'repeat last workout</button>' : ''}
           <button class="icon-btn bulk-tech" type="button" title="mark a technique on several sets">${icon('bolt', 'i inline')} technique</button>
         </div>
       </div>
@@ -698,7 +737,7 @@ function volumeHTML(e) {
     const vol = e.logStyle ? null : fmtEffort(sets);
     const pctCls = !cmp || cmp.pct == null ? '' : cmp.pct > 0.5 ? 'up' : cmp.pct < -0.5 ? 'down' : '';
     const title = cmp ? `compared over ${cmp.usedSets} ${cmp.usedSets === 1 ? 'set' : 'sets'}` : '';
-    return `<div class="vol-row ${cls}">
+    return `<div class="vol-row ${cls}" style="--w:${e.logStyle ? 0 : barPct(volumeOf(sets), top)}%">
       <span class="d">${esc(label)}</span>
       <span class="n">${sets.length}×</span>
       <span class="v">${vol == null ? '' : esc(vol)}</span>
@@ -707,6 +746,7 @@ function volumeHTML(e) {
     </div>`;
   };
 
+  const top = Math.max(volumeOf(nowSets), ...days.map((d) => volumeOf(d.sets)));
   const lines = [];
   if (nowSets.length) lines.push(row('today', nowSets, days[0] ? compareAtEqualSets(nowSets, days[0].sets) : null, 'now'));
   days.forEach((d, i) => {
@@ -744,7 +784,7 @@ function commentHTML(e) {
   const text = exerciseComment(e.exerciseId);
   return `<div class="ex-comment">${text
     ? `<div class="hint comment">${icon('note', 'i inline')} ${esc(text)}</div>
-       <button class="link-btn comment-edit" type="button">✎ edit note</button>`
+       <button class="link-btn comment-edit" type="button">${icon('edit', 'i inline')}edit note</button>`
     : `<button class="link-btn comment-edit" type="button">${icon('note', 'i inline')} add a note</button>`}</div>`;
 }
 
@@ -863,7 +903,7 @@ function setRow(e, si, saved) {
                  value="${reps}" placeholder="${ph}" aria-label="${unit} set ${si + 1}">
           <span class="unit">${unit}</span>
         </div>
-        <button class="icon-btn del-set" aria-label="remove set">×</button>
+        <button class="icon-btn del-set" aria-label="remove set">${icon('close')}</button>
       </div>`;
   }
 
@@ -881,7 +921,7 @@ function setRow(e, si, saved) {
                value="${reps}" placeholder="—" data-hit="${hit}" aria-label="reps set ${si + 1}">
         <span class="unit">reps</span>
       </div>
-      <button class="icon-btn del-set" aria-label="remove set">×</button>
+      <button class="icon-btn del-set" aria-label="remove set">${icon('close')}</button>
     </div>`;
 }
 
@@ -1249,7 +1289,7 @@ function openChangeDialog(defId) {
     inDay.has(r.id) && r.id !== cur.exerciseId ? "already in today's workout" : null,
   ].filter(Boolean).join(' · ');
   const itemHTML = (r, i) => `<button type="button" class="pk-item${r.isNew ? ' new' : ''}${chosen?.id === r.id ? ' sel' : ''}" data-i="${i}">
-    ${r.isNew ? '＋ ' : ''}${esc(r.isNew ? r.name : exName(r.name))}<small>${esc(info(r))}</small></button>`;
+    ${r.isNew ? icon('plus', 'i inline') : ''}${esc(r.isNew ? r.name : exName(r.name))}<small>${esc(info(r))}</small></button>`;
   const sec = (title, a, b) => (b > a
     ? `${title ? `<div class="pk-sec">${esc(title)}</div>` : ''}${rows.slice(a, b).map((r, k) => itemHTML(r, a + k)).join('')}`
     : '');
@@ -1409,7 +1449,7 @@ function openAddDialog() {
     inDay.has(r.id) ? "already in today's workout" : null,
   ].filter(Boolean).join(' · ');
   const itemHTML = (r, i) => `<button type="button" class="pk-item${r.isNew ? ' new' : ''}${chosen?.id === r.id ? ' sel' : ''}" data-i="${i}">
-    ${r.isNew ? '＋ ' : ''}${esc(r.isNew ? r.name : exName(r.name))}<small>${esc(info(r))}</small></button>`;
+    ${r.isNew ? icon('plus', 'i inline') : ''}${esc(r.isNew ? r.name : exName(r.name))}<small>${esc(info(r))}</small></button>`;
 
   function renderList() {
     const text = q.value.trim();
@@ -1749,11 +1789,24 @@ function updateProgressCount() {
     .filter((e) => draft.logs[activeEx(e).exerciseId]?.sets?.some((s) => s?.reps)).length;
   const el = $('#ex-count');
   if (el) el.textContent = `${done}/${draft.exercises.length} exercises logged`;
-  const bar = $('#ex-bar');
-  if (bar) bar.style.width = `${pctDone(done, draft.exercises.length)}%`;
+  const ring = $('#ex-ring');
+  if (ring) {
+    $('.fill', ring).setAttribute('stroke-dasharray', `${pctDone(done, draft.exercises.length)} 100`);
+    $('b', ring).textContent = done;
+  }
 }
 
 const pctDone = (n, total) => (total ? Math.round((n / total) * 100) : 0);
+
+/** Ring on the day card: exercises with at least one set logged. */
+function ringHTML(done, total) {
+  return `<div class="ring" id="ex-ring">
+    <svg viewBox="0 0 36 36" aria-hidden="true">
+      <circle class="track" cx="18" cy="18" r="15.5" pathLength="100"/>
+      <circle class="fill" cx="18" cy="18" r="15.5" pathLength="100" stroke-dasharray="${pctDone(done, total)} 100"/>
+    </svg>
+    <b>${done}</b><small>of ${total}</small></div>`;
+}
 
 // "4×5 4×5 · 75%" used to show up here (label + summary repeat the scheme)
 function mainPlanTxt(plan) {
@@ -1936,14 +1989,14 @@ function renderDash() {
     sum + (s.exercises || []).reduce((v, e) => v + tonnage(e.sets), 0), 0);
 
   root.innerHTML = `
-    <div class="stat-grid" style="margin-bottom:20px">
-      <div class="stat"><div class="v">${dated.length}</div><div class="k">days</div></div>
-      <div class="stat"><div class="v">${index.size}</div><div class="k">exercises</div></div>
-      <div class="stat"><div class="v">${totalSets}</div><div class="k">sets</div></div>
-      <div class="stat"><div class="v">${(volume / 1000).toFixed(0)}t</div><div class="k">volume</div></div>
+    <div class="stat-grid">
+      <div class="stat"><span class="ico">${icon('calendar')}</span><div class="v">${dated.length}</div><div class="k">days trained</div></div>
+      <div class="stat"><span class="ico">${icon('dumbbell')}</span><div class="v">${index.size}</div><div class="k">exercises</div></div>
+      <div class="stat"><span class="ico">${icon('stack')}</span><div class="v">${totalSets}</div><div class="k">sets</div></div>
+      <div class="stat"><span class="ico">${icon('fire')}</span><div class="v">${(volume / 1000).toFixed(0)}t</div><div class="k">total volume</div></div>
     </div>
 
-    <div class="legend">
+    <details class="legend"><summary>${icon('info', 'i inline')}How to read progress</summary>
       <p><b>Bars</b> = actual load of your best set in each workout, reps right
       below (e.g. <b>90kg</b> / <b>7r</b>).</p>
       <p><b>1RM 49.5 → 54.5kg</b> = estimated one-rep max, comparing the
@@ -1951,7 +2004,7 @@ function renderDash() {
       <b>second half</b>.</p>
       <p><b>+4%</b> = how much that estimate grew between the two halves.
       Positive is progress, close to zero is a plateau.</p>
-    </div>
+    </details>
 
     ${section('Improving', gaining, 'No exercise with a clear gain yet.')}
     ${section('Stalled, look here', stalled, 'Nothing stalled. Good sign.')}
@@ -2018,12 +2071,14 @@ function section(title, rows, emptyMsg) {
           <div class="prog-row">
             <div class="nm">${esc(exName(r.name))}<small>${r.samples} sets · last ${fmtDate(r.lastDate)}</small></div>
             <div class="val">1RM ${r.from} → ${r.to}kg</div>
-            <div class="delta ${dir}">${sign}${r.pct.toFixed(1)}%</div>
+            <div class="delta ${dir}">${dir === 'up' ? icon('up') : dir === 'down' ? icon('down') : ''}${sign}${r.pct.toFixed(1)}%</div>
           </div>
           ${loadChart(r.days, dir)}`;
       }).join('')}
     </div>`;
 }
+
+let chartSeq = 0;   // unique ids for each chart's gradient
 
 // Real load of the best set per workout, not the estimated 1RM (a projection is
 // useless for deciding what to put on the machine). One bar per workout:
@@ -2041,31 +2096,41 @@ function loadChart(days, dir, opts = {}) {
   const base = Math.max(0, min * 0.88);
   const span = (max - base) || 1;
 
-  const color = dir === 'up' ? 'var(--ok)' : dir === 'down' ? 'var(--err)' : 'var(--text)';
-  const slotW = opts.scroll ? 44 : Math.max(30, 320 / bars.length);
-  const w = Math.max(320, slotW * bars.length);
-  const h = 118, padTop = 20, padBottom = 30;
-  const barW = Math.min(30, slotW * 0.66);
+  const slotW = opts.scroll ? 46 : Math.max(32, 330 / bars.length);
+  const w = Math.max(330, slotW * bars.length);
+  const h = 160, padTop = 30, padBottom = 36;
+  const plotH = h - padTop - padBottom;
+  const barW = Math.min(24, slotW * 0.56);
+  const last = bars.length - 1;
+  const best = values.lastIndexOf(max);
+  const id = `cg${++chartSeq}`;
 
-  const rects = bars.map((b, i) => {
-    const x = i * slotW + (slotW - barW) / 2;
-    const bh = ((b.load - base) / span) * (h - padTop - padBottom);
-    const y = h - padBottom - bh;
-    const cx = x + barW / 2;
-    return `
-      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}"
-        height="${Math.max(3, bh).toFixed(1)}" rx="3" fill="${color}"
-        opacity="${b.load === max ? 1 : 0.6}"/>
-      <text x="${cx.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle"
-        font-size="11" font-weight="800" fill="var(--text)">${fmtKg(b.load)}</text>
-      <text x="${cx.toFixed(1)}" y="${(h - padBottom + 12).toFixed(1)}" text-anchor="middle"
-        font-size="9" font-weight="700" fill="${color}">${b.reps}r</text>
-      <text x="${cx.toFixed(1)}" y="${(h - padBottom + 23).toFixed(1)}" text-anchor="middle"
-        font-size="8" font-weight="600" fill="var(--text)" opacity="0.7">${esc(dayLabel(b.date))}</text>`;
+  // reference lines at the top load, halfway and the base
+  const grid = [0, 0.5, 1].map((f) => {
+    const y = (padTop + plotH * (1 - f)).toFixed(1);
+    return `<line class="grid" x1="0" x2="${w}" y1="${y}" y2="${y}"/>`;
   }).join('');
 
-  const svg = `<svg class="chart" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"
-    role="img" aria-label="Load lifted per workout, in kg">${rects}</svg>`;
+  // only the last workout and the best of the period stand out
+  const cols = bars.map((b, i) => {
+    const x = i * slotW + (slotW - barW) / 2;
+    const bh = Math.max(6, ((b.load - base) / span) * plotH);
+    const y = padTop + plotH - bh;
+    const cx = (x + barW / 2).toFixed(1);
+    const hl = i === last || i === best;
+    return `
+      <rect class="bar${hl ? ' hl' : ''}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}"
+        height="${bh.toFixed(1)}" rx="${Math.min(8, barW / 2).toFixed(1)}"${hl ? ` fill="url(#${id})"` : ''}/>
+      <text class="kg${hl ? ' hl' : ''}" x="${cx}" y="${(y - 8).toFixed(1)}" text-anchor="middle">${fmtKg(b.load)}</text>
+      <text class="reps" x="${cx}" y="${(h - padBottom + 15).toFixed(1)}" text-anchor="middle">${b.reps}r</text>
+      <text class="day" x="${cx}" y="${(h - padBottom + 28).toFixed(1)}" text-anchor="middle">${esc(dayLabel(b.date))}</text>`;
+  }).join('');
+
+  const svg = `<svg class="chart ${dir}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"
+    role="img" aria-label="Load lifted per workout, in kg">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".5"/>
+    </linearGradient></defs>${grid}${cols}</svg>`;
 
   return opts.scroll ? `<div class="chart-scroll">${svg}</div>` : svg;
 }
@@ -2119,11 +2184,11 @@ function renderHistSessions(history) {
   $('#hist-count').textContent = `${pastDays.length} workouts`;
 
   $('#hist-body').innerHTML = `
-    <div class="legend">
+    <details class="legend"><summary>${icon('info', 'i inline')}How it works</summary>
       <p>Whole workouts, newest first, in the same format as the summary you get
       when finishing. Spotted a wrong number? <b>Fix this workout</b> opens that
       day's loads and reps.</p>
-    </div>
+    </details>
     ${visible.map(sessionCard).join('')}
     ${remaining > 0 ? `<button class="btn ghost" id="hist-more">Show 6 more (${remaining} left)</button>` : ''}
     ${histShown > 6 ? `<button class="btn ghost" id="hist-less">Back to the last 6</button>` : ''}`;
@@ -2143,7 +2208,7 @@ function sessionCard(session) {
 
   return `
     <div class="day-card done-card sess-card"${session.variant ? ` data-variant="${esc(session.variant)}"` : ''}>
-      <div class="focus">${isToday ? '✓ Today · ' : ''}${esc(fmtDate(session.date))}${slot ? ` · ${esc(slot + variantTxt)}` : ''}</div>
+      <div class="focus">${isToday ? icon('check', 'i inline') + 'Today · ' : ''}${esc(fmtDate(session.date))}${slot ? ` · ${esc(slot + variantTxt)}` : ''}</div>
       <div class="range">
         ${session.exercises.length} ${session.exercises.length === 1 ? 'exercise' : 'exercises'} ·
         ${nSets} ${nSets === 1 ? 'set' : 'sets'} ·
@@ -2209,7 +2274,7 @@ function openSessionEditor(date) {
             ${misfiled ? `<small class="se-warn">the sets are filed under <b>${esc(exName(misfiled))}</b>, use "swap" to fix it</small>` : ''}
           </span>
           <button type="button" class="link-btn se-swap" data-swap-ex="${ei}">swap</button>
-          <button type="button" class="se-x" data-rm-ex="${ei}" aria-label="Remove exercise">✕</button>
+          <button type="button" class="se-x" data-rm-ex="${ei}" aria-label="Remove exercise">${icon('close')}</button>
         </div>
         ${e.sets.map((st, si) => `
           <div class="set-row">
@@ -2224,7 +2289,7 @@ function openSessionEditor(date) {
                 data-ei="${ei}" data-si="${si}" data-f="reps" value="${st.reps ?? ''}">
               <span class="unit">rep</span>
             </div>
-            <button type="button" class="icon-btn" data-rm-set="${ei}:${si}" aria-label="Remove set">✕</button>
+            <button type="button" class="icon-btn" data-rm-set="${ei}:${si}" aria-label="Remove set">${icon('close')}</button>
           </div>`).join('')}
         <button type="button" class="link-btn se-more" data-add-set="${ei}">+ set</button>
       </div>`;
@@ -2278,7 +2343,7 @@ function openSessionEditor(date) {
         const misfiledNote = !c.isNew && c.id !== exactId(c.name) ? ` · filed under "${exName(c.id.replace(/-/g, ' '))}"` : '';
         const info = c.isNew ? 'new name, starts with no history' : `${c.samples} sets in the history${misfiledNote}`;
         return `<button type="button" class="pk-item${c.isNew ? ' new' : ''}${misfiledNote ? ' odd' : ''}" data-add="${i}">
-          ${c.isNew ? '＋ ' : ''}${esc(c.isNew ? c.name : exName(c.name))}<small>${esc(info)}</small>
+          ${c.isNew ? icon('plus', 'i inline') : ''}${esc(c.isNew ? c.name : exName(c.name))}<small>${esc(info)}</small>
         </button>`;
       }).join('')
       : '<p class="hint">Nothing by that name in the history. Type the full name to create it.</p>';
@@ -2448,12 +2513,12 @@ function renderHistExercises(history) {
   $('#hist-count').textContent = `${mainItems.length} exercises`;
 
   $('#hist-body').innerHTML = `
-    <div class="legend">
+    <details class="legend"><summary>${icon('info', 'i inline')}How it works</summary>
       <p>Every workout of each exercise, oldest to newest. <b>Drag the chart
       sideways</b> to see the whole history.</p>
       <p><b>rename</b> fixes the name across the history, and if the new name
       already exists, merges the two into one.</p>
-    </div>
+    </details>
     <div class="field" style="margin-bottom:14px">
       <input type="search" id="hist-filter" placeholder="filter exercises…"
         autocapitalize="off" style="text-align:left; padding-right:11px">
@@ -2861,7 +2926,7 @@ function updateSyncChip() {
   const chip = $('#sync-chip');
   if (chip) {
     chip.hidden = !txt;
-    chip.textContent = `☁︎ ${txt}`;
+    chip.innerHTML = `${icon('cloud', 'i inline')}${esc(txt)}`;
     chip.dataset.status = sync.status;
   }
   const line = $('#sync-status-line');
@@ -2909,7 +2974,7 @@ function editsSection() {
     <div class="section">
       <h2>Program changes</h2>
       <p class="hint" style="padding-top:0">
-        Permanent swaps made from an exercise card (⇄ Swap). They only change what
+        Permanent swaps made from an exercise card. They only change what
         shows up in the workout, the history is never touched. They travel with sync.
       </p>
       ${active.length ? active.map(row).join('') : '<p class="hint">No active changes, the program is the original one.</p>'}
@@ -2986,8 +3051,8 @@ function renderSettings() {
           <div class="delta flat"></div>
         </div>`).join('')}
       <div class="btn-row" style="margin-top:10px">
-        <button class="btn ghost" id="cycle-back">← Back one</button>
-        <button class="btn ghost" id="cycle-fwd">Forward one →</button>
+        <button class="btn ghost" id="cycle-back">${icon('left', 'i inline')}Back one</button>
+        <button class="btn ghost" id="cycle-fwd">Forward one${icon('right', 'i inline-r')}</button>
       </div>
     </div>
 
@@ -3063,6 +3128,7 @@ function renderSettings() {
     );
     if (!ok) return;
     db.clear();
+    try { localStorage.removeItem(DEMO_KEY); } catch { /* nothing to clear */ }
     state = db.load(); draft = null;
     toast('Everything deleted');
     renderSettings();
@@ -3081,7 +3147,8 @@ function saveBackup() {
   toast('Backup downloaded');
 }
 
-$$('[data-icon]').forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
+// the selected tab swaps the outline icon for the filled one (CSS picks which shows)
+$$('[data-icon]').forEach((el) => { el.innerHTML = icon(el.dataset.icon, 'i off') + icon(el.dataset.icon, 'i on', 'duo'); });
 renderToday();
 updateSyncChip();
 syncNow();
