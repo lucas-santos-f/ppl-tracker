@@ -1,11 +1,6 @@
-// Ciclo PPL 2x com ondulação Força (A) / Hipertrofia (B).
-//
-// O ciclo avança por TREINO CONCLUÍDO, nunca por data de calendário: tirar um
-// dia extra de descanso adia o próximo treino, não o pula.
-//
-// Os exercícios de cada dia não vêm de uma lista fixa — são extraídos do
-// histórico real. O que o usuário de fato treina em dia de Push é o que aparece
-// na tela de Push.
+// 2x PPL, two variants per slot (A/B) with different exercises and rep ranges.
+// The cycle moves per FINISHED workout, never by calendar date: an extra rest day
+// postpones the next workout instead of skipping it.
 
 import { indexByExercise } from './parser.js';
 import { normalizeExercise, movementsOf, contradicts } from './normalize.js';
@@ -13,9 +8,8 @@ import { prescribe } from './calc.js';
 import { programFor, PROGRAM } from './program.js';
 import { canonicalId } from './curation.js';
 import { techniquePattern, techniquePlan } from './technique.js';
+import { mainLiftPlan } from './mainlift.js';
 
-// Quantas séries de trabalho um exercício tem por padrão, quando o histórico
-// não diz outra coisa.
 const DEFAULT_SETS = 3;
 
 export const CYCLE = [
@@ -28,19 +22,19 @@ export const CYCLE = [
 ];
 
 export const SLOT_LABEL = { push: 'Push', pull: 'Pull', legs: 'Legs' };
-export const VARIANT_LABEL = { A: 'Força', B: 'Hipertrofia' };
+export const VARIANT_LABEL = { A: 'Treino A', B: 'Treino B' };
 
-// Quantas sessões passadas do mesmo slot são consultadas para montar o dia.
+// past sessions of the same slot looked at to build the day
 const TEMPLATE_LOOKBACK = 4;
 
-// Um treino real tem 6-9 exercícios. Sem teto, juntar várias sessões produz
-// uma lista de 20+ que não corresponde a nenhum treino que ele de fato faz.
+// a real session is 6-9 exercises, merging a few sessions without a cap gave 20+
 const MAX_EXERCISES = 9;
 
-/**
- * Classifica uma sessão histórica pelo grupo dominante.
- * Core (abdominal/lombar) nunca decide o dia — é acessório de qualquer treino.
- */
+// swap suggestions per exercise, and how often a variation must show up to be suggested
+const MAX_VARIANTS = 2;
+const MIN_VARIANT_SESSIONS = 4;
+
+// core never decides the day, it's an accessory on all of them
 export function classifySession(session) {
   const counts = { push: 0, pull: 0, legs: 0 };
   for (const e of session.exercises || []) {
@@ -50,13 +44,8 @@ export function classifySession(session) {
   return best && best[1] > 0 ? best[0] : null;
 }
 
-/**
- * Monta a lista de exercícios de um slot.
- *
- * A base é a ÚLTIMA sessão daquele slot — é o treino que ele de fato está
- * fazendo hoje, na ordem em que faz. As sessões anteriores só entram para
- * completar caso a última tenha sido curta, e sempre por frequência.
- */
+// Base = the LAST session of the slot (what's actually being trained, in that
+// order). Older ones only fill the gaps, by frequency.
 export function templateForSlot(sessions, slot) {
   const ofSlot = sessions
     .filter((s) => s.date && classifySession(s) === slot)
@@ -75,8 +64,6 @@ export function templateForSlot(sessions, slot) {
     out.push(e);
   }
 
-  // Completa com o que se repete nas sessões anteriores, do mais frequente
-  // para o menos, até o tamanho de um treino normal.
   if (out.length < MAX_EXERCISES) {
     const freq = new Map();
     for (const s of previous) {
@@ -88,7 +75,7 @@ export function templateForSlot(sessions, slot) {
       }
     }
     const extras = [...freq.values()]
-      .filter((v) => v.count >= 2) // apareceu em pelo menos duas sessões
+      .filter((v) => v.count >= 2)  // in 2+ sessions
       .sort((a, b) => b.count - a.count)
       .slice(0, MAX_EXERCISES - out.length);
     out.push(...extras.map((v) => v.exercise));
@@ -97,13 +84,6 @@ export function templateForSlot(sessions, slot) {
   return out.slice(0, MAX_EXERCISES);
 }
 
-/**
- * Treino do dia: slot + variante da posição atual do ciclo, com cada exercício
- * já prescrito (carga alvo + faixa de reps).
- *
- * @param {{sessions:Array, cyclePosition:number}} state
- * @param {{referenceDate?:string, position?:number}} [opts]
- */
 export function workoutForPosition(state, opts = {}) {
   const pos = opts.position ?? (state.cyclePosition || 0);
   const step = CYCLE[((pos % CYCLE.length) + CYCLE.length) % CYCLE.length];
@@ -111,68 +91,93 @@ export function workoutForPosition(state, opts = {}) {
   const history = state.sessions || [];
   const index = indexByExercise(history);
 
-  // Quantas vezes este slot já foi treinado — define a rotação de 3 em 3
-  // (flexora → flexora → stiff).
+  // how many times this slot was trained -> every-third rotation (flexora, flexora, stiff)
   const slotOccurrence = Math.floor(pos / CYCLE.length) * 2 + (step.variant === 'B' ? 1 : 0);
 
-  let plannedExercises = programFor(step.slot, step.variant, slotOccurrence);
+  // hidden = removed from THIS workout only. Permanent removal is a program edit
+  // ('remove'), already applied inside programFor
+  const hidden = new Set(opts.hidden || []);
+  const programItems = programFor(step.slot, step.variant, slotOccurrence, state.programEdits || [])
+    .filter((it) => !hidden.has(it.key));
 
-  // Exceção temporária para o treino usado no print de 29/08/2026.
-  const referenceDate = opts.referenceDate ?? new Date().toISOString().slice(0, 10);
-  if (referenceDate === '2026-08-29' && step.slot === 'legs') {
-    const stiff = PROGRAM.legs.exercises.find((item) => item.name === 'Stiff');
-    plannedExercises = plannedExercises.map((item) => item.name === 'Cadeira Flexora' ? stiff : item);
-  }
+  // fuzzy matching may never land on an id that another card of the day declares
+  const reserved = declaredIds(programItems);
+  const items = programItems.map((item) => {
+    const found = resolveHistory(index, item, reserved);
+    const base = found ?? { id: exactId(item.name), name: item.name, group: step.slot, sessions: [] };
+    return { item, found, base, main: prescribeItem({ base, found, item, step, history, opts }) };
+  });
 
-  const exercises = plannedExercises.map((item) => {
-    const found = resolveHistory(index, item);
-    const base = found ?? { id: normalizeExercise(item.name).id, name: item.name, group: step.slot, sessions: [] };
-    const p = prescribe(base, step.variant, {
-      referenceDate: opts.referenceDate,
-      repRange: item.repRange?.[step.variant],
-      machineBaseLoad: item.machineBaseLoad,
-    });
+  const dayIds = new Set(items.map((r) => r.main.exerciseId));
 
-    // Exercícios de peso corporal e cardio não recebem carga alvo, mesmo que
-    // exista número no histórico (barra fixa assistida, por exemplo).
-    const noLoad = !!item.bodyweight || !!item.cardio;
-    const loadMultiplier = item.loadMultiplier ?? 1;
-    const displayLoad = (load) => Number.isFinite(load)
-      ? Math.round(load * loadMultiplier * 10) / 10
-      : load;
-    const scaledTarget = displayLoad(p.targetLoad);
-    const targetLoad = Number.isFinite(scaledTarget) && Number.isFinite(item.maxTargetLoad)
-      ? Math.min(scaledTarget, item.maxTargetLoad)
-      : scaledTarget;
+  // item.alts -> fixed list, always shown (even with no history). No alts -> up to
+  // MAX_VARIANTS suggestions from history. opts.extraAlts -> one-off swaps picked
+  // in the app for today, added on top.
+  const NO_VARY_PART = new Set(['Core', 'Mobilidade', 'Cardio']);
+  const MAX_DECLARED_ALTS = 8;
+  const extraAlts = opts.extraAlts || {};
+  const exercises = items.map(({ item, found, main }) => {
+    const seen = new Set([main.exerciseId]);
 
-    // Quantas séries e onde entram drop set / rest-pause, lidos do histórico
-    // deste exercício — não de uma regra fixa.
-    const plannedSets = typicalSetCount(history, base.id) || DEFAULT_SETS;
-    const pattern = found ? techniquePattern(history, found.id) : { byPosition: new Map(), sampled: 0 };
-    const techniques = techniquePlan(pattern, plannedSets);
+    // exact id, never fuzzy: a declared alternative points at ONE exercise. Fuzzy
+    // matching sent "Agachamento Livre Tradicional" to Frontal (same words) and one
+    // of the two vanished in the dedupe below
+    const declared = (a, custom = false) => {
+      const af = index.get(a.histId || exactId(typeof a.hist === 'string' ? a.hist : a.name)) || null;
+      const abase = af ?? { id: exactId(a.name), name: a.name, group: step.slot, sessions: [] };
+      const v = prescribeItem({
+        base: abase, found: af,
 
+        item: { name: a.name, part: item.part, alert: a.alert ?? null, note: a.note ?? null,
+          bodyweight: !!a.bodyweight, logStyle: item.logStyle, cardio: item.cardio,
+          main: a.main ? item.main : undefined },
+        step, history, opts, isVariant: true,
+      });
+      if (seen.has(v.exerciseId)) return null;
+      seen.add(v.exerciseId);
+      return custom ? { ...v, custom: true } : v;
+    };
+
+    let variants = [];
+    if (Array.isArray(item.alts) && item.alts.length) {
+      variants = item.alts.slice(0, MAX_DECLARED_ALTS).map((a) => declared(a)).filter(Boolean);
+    } else {
+      const canVary = !item.daily && !item.cardio && !item.logStyle && !NO_VARY_PART.has(item.part);
+      if (canVary) {
+        variants = similarFromHistory(index, item, found, step, dayIds).map((entry) =>
+          prescribeItem({
+            base: entry, found: entry,
+            item: { name: entry.name, part: item.part },
+            step, history, opts, isVariant: true,
+          }));
+        variants.forEach((v) => seen.add(v.exerciseId));
+      }
+    }
+    for (const a of extraAlts[item.key] || []) {
+      const v = declared(a, true);
+      if (v) variants.push(v);
+    }
     return {
-      ...p,
-      name: item.name,             // nome oficial do programa, não a grafia do caderno
-      part: item.part,
-      note: item.note ?? null,
-      alt: item.alt ?? null,
-      cardio: !!item.cardio,
-      highRep: !!item.highRep,
-      loadMultiplier,
-      targetLoad: noLoad ? null : targetLoad,
-      oneRM: displayLoad(p.oneRM),
-      bestLoad: displayLoad(p.bestLoad),
-      uncappedLoad: displayLoad(p.uncappedLoad),
-      basedOn: p.basedOn ? { ...p.basedOn, load: displayLoad(p.basedOn.load) } : null,
-      lastSets: p.lastSets.map((set) => ({ ...set, load: displayLoad(set.load) })),
-      bodyweight: noLoad || p.bodyweight,
-      matchedAs: found ? found.name : null,   // como foi localizado no histórico
-      noHistory: !found,
-      plannedSets,
-      techniques,                  // [{setIndex, type, frequency}]
+      ...main,
+      key: item.key,
+      only: item.only ?? null,
+      replacedFrom: item.replacedFrom ?? null,
+      editId: item.editId ?? null,
+      variants,
     };
   });
+
+  // "+" button extras for today only, appended at the end
+  const already = new Set(exercises.map((e) => e.exerciseId));
+  for (const x of opts.extras || []) {
+    const af = index.get(x.histId || exactId(x.name)) || null;
+    const abase = af ?? { id: exactId(x.name), name: x.name, group: step.slot, sessions: [] };
+    const v = prescribeItem({ base: abase, found: af, item: { name: x.name, part: 'Extra' }, step, history, opts });
+    if (already.has(v.exerciseId)) continue;
+    already.add(v.exerciseId);
+    exercises.push({ ...v, key: `extra:${v.exerciseId}`, only: null, replacedFrom: null,
+      editId: null, variants: [], extra: true });
+  }
 
   return {
     position: pos,
@@ -185,24 +190,146 @@ export function workoutForPosition(state, opts = {}) {
   };
 }
 
-// Cobertura mínima do nome do programa para aceitar um exercício do histórico.
-// "Barra Fixa Pegada Aberta" precisa achar "Barra Fixa Aberta" (3 de 4 palavras),
-// mas não pode cair em qualquer coisa que tenha só "barra".
+// cues for a whole family of exercises: any pulldown variation, machines included,
+// gets the range-of-motion reminder. A note in the program always wins.
+const AUTO_NOTES = [
+  [/puxada/i, 'Amplitude 100%: puxe até quase encostar no peito — mesmo que tenha que baixar a carga.'],
+];
+
+function autoNote(name) {
+  for (const [re, txt] of AUTO_NOTES) if (re.test(String(name || ''))) return txt;
+  return null;
+}
+
+function prescribeItem({ base, found, item, step, history, opts, isVariant = false }) {
+  const p = prescribe(base, step.variant, {
+    referenceDate: opts.referenceDate,
+    repRange: item.repRange?.[step.variant],
+  });
+
+  // no target load for bodyweight/cardio/timed sets, even when the history has a
+  // number (assisted pull-up machine, etc.)
+  const noLoad = !!item.bodyweight || !!item.cardio || !!item.logStyle;
+
+  // set count and where drops/rest-pause go come from this exercise's history, the
+  // program can only nudge it (setsDelta) or pin it (fixedSets)
+  const plannedSets = plannedSetCount(history, base.id, item, step.variant);
+  const pattern = found ? techniquePattern(history, found.id) : { byPosition: new Map(), sampled: 0 };
+  const techniques = withForcedTechniques(techniquePlan(pattern, plannedSets), item, plannedSets);
+
+  if (item.main) {
+    const plan = mainLiftPlan(found, step.variant, item.main.test);
+    return {
+      ...p,
+      name: item.name,
+      part: item.part,
+      note: item.note ?? autoNote(item.name),
+      alt: null,
+      cardio: false,
+      highRep: false,
+      alert: item.alert ?? null,
+      logStyle: null,
+      daily: false,
+      bodyweight: false,
+      capped: false,
+      oneRM: plan.oneRM,
+      stale: false,
+      matchedAs: found ? found.name : null,
+      noHistory: !found,
+      isVariant,
+      histSamples: found ? found.sessions.length : 0,
+      techniques: [],
+      mainPlan: plan,
+      ...planFields(plan.normal),
+    };
+  }
+
+  return {
+    ...p,
+    name: item.name,
+    part: item.part,
+    note: item.note ?? autoNote(item.name),
+    alt: item.alt ?? null,
+    cardio: !!item.cardio,
+    highRep: !!item.highRep,
+    alert: item.alert ?? null,
+    logStyle: item.logStyle ?? null,
+    daily: !!item.daily,
+    targetLoad: noLoad ? null : p.targetLoad,
+    bodyweight: noLoad || p.bodyweight,
+    matchedAs: found ? found.name : null,
+    noHistory: !found,
+    isVariant,
+    histSamples: found ? found.sessions.length : 0,
+    plannedSets,
+    techniques,
+  };
+}
+
+export function planFields(plan) {
+  const first = plan.work[0];
+  return {
+    activePlan: plan,
+    plannedSets: plan.work.length,
+    targetLoad: first?.load ?? null,
+    repRange: [first?.reps ?? 5, first?.reps ?? 5],
+  };
+}
+
+// "movement" words that are really just equipment and match anything ('barra'
+// linked Tríceps Barra to Barra Fixa). Only used when the name has nothing else.
+const GENERIC_MOVES = new Set(['barra', 'fixa', 'leg', 'press']);
+
+function similarFromHistory(index, item, found, step, dayIds = new Set()) {
+  const want = normalizeExercise(
+    typeof item.hist === 'string' ? item.hist : item.name
+  );
+  const wantMoves = movementsOf(want.words);
+  if (wantMoves.size === 0) return [];
+
+  const primary = want.words.find((w) => wantMoves.has(w) && !GENERIC_MOVES.has(w))
+    ?? want.words.find((w) => wantMoves.has(w));
+
+  const skip = new Set([want.id, found?.id, ...dayIds].filter(Boolean));
+
+  return [...index.values()]
+    .filter((e) => !skip.has(e.id) && e.group === step.slot)
+    .map((e) => {
+      const moves = movementsOf(normalizeExercise(e.name).words);
+      const shared = [...wantMoves].filter((m) => moves.has(m)).length;
+      const dates = e.sessions.map((s) => s.date).filter(Boolean).sort();
+      return { e, hasPrimary: moves.has(primary), shared, samples: e.sessions.length, last: dates[dates.length - 1] || '' };
+    })
+    .filter((c) => c.hasPrimary && c.samples >= MIN_VARIANT_SESSIONS)
+    .sort((a, b) => b.shared - a.shared || b.samples - a.samples || b.last.localeCompare(a.last))
+    .slice(0, MAX_VARIANTS)
+    .map((c) => c.e);
+}
+
+// "Barra Fixa Pegada Aberta" must find "Barra Fixa Aberta" (3 of 4 words) but not
+// anything that just has "barra" in it
 const MIN_MATCH = 0.5;
 
-/**
- * Liga um exercício do programa ao histórico importado.
- *
- * O nome no programa é o oficial; no caderno ele aparece abreviado, com ordem
- * trocada e palavras a mais ou a menos. Em vez de exigir correspondência exata,
- * pontua a sobreposição de palavras e usa o volume de séries como desempate —
- * assim "Panturrilha Máquina" cai no aparelho principal, não numa variação
- * anotada duas vezes.
- */
-/**
- * Quantas séries o exercício costuma ter — mediana das últimas vezes, para que
- * um dia atípico não desloque o número.
- */
+function plannedSetCount(history, exerciseId, item, variant) {
+  if (item.fixedSets) return item.fixedSets;
+  const base = typicalSetCount(history, exerciseId) || DEFAULT_SETS;
+  const d = item.setsDelta;
+  const delta = (d && typeof d === 'object') ? (d[variant] ?? 0) : (d ?? 0);
+  return Math.max(1, base + delta);
+}
+
+function withForcedTechniques(plan, item, totalSets) {
+  if (!item.forceTechniques?.length) return plan;
+  let out = plan;
+  for (const f of item.forceTechniques) {
+    const idx = f.pos < 0 ? totalSets + f.pos : f.pos;
+    if (idx < 0 || idx >= totalSets) continue;
+    out = out.filter((t) => t.setIndex !== idx).concat({ setIndex: idx, type: f.type, frequency: 1 });
+  }
+  return out.sort((a, b) => a.setIndex - b.setIndex);
+}
+
+// median of the last 8 so one odd day doesn't move it
 function typicalSetCount(sessions, exerciseId) {
   const counts = [];
   for (const s of sessions || []) {
@@ -215,20 +342,80 @@ function typicalSetCount(sessions, exerciseId) {
   return recent[Math.floor(recent.length / 2)];
 }
 
-/**
- * Resolve de onde vêm as cargas de um exercício do programa.
- * `hist: null` declara que o exercício é novo; uma string declara o alvo exato;
- * a ausência do campo cai no casamento automático.
- */
-function resolveHistory(index, item) {
-  if (item.hist === null) return null;
+// hist: null -> new exercise, its own name by exact id only (a new name must never
+// borrow someone else's history). string -> that exact target. absent -> fuzzy.
+function resolveHistory(index, item, reserved = new Set()) {
+  if (item.histId) return index.get(item.histId) || null;
+
+  if (item.hist === null) return index.get(exactId(item.name)) || null;
   if (typeof item.hist === 'string') {
-    // canonicalId para que um alvo declarado com o nome antigo ("Serrote
-    // Unilateral") continue achando o histórico depois da fusão.
-    const byId = index.get(canonicalId(normalizeExercise(item.hist).id));
-    if (byId) return byId;
+    // exactId applies the aliases, so a target declared with an old name
+    // ("Serrote Unilateral") still finds the merged history
+    const byId = index.get(exactId(item.hist));
+    if (byId || item.histExact) return byId || null;
   }
-  return findInHistory(index, { match: item.hist ?? item.name, alt: item.alt });
+
+  // Fuzzy, but never onto an exercise this program declares on another card. That's
+  // how "Agachamento Livre Tradicional" ended up writing into Frontal's id.
+  const own = ownIds(item);
+  const avoid = new Set([...reserved].filter((id) => !own.has(id)));
+  return findInHistory(index, { match: item.hist ?? item.name, alt: item.alt, avoid });
+}
+
+function ownIds(item) {
+  const ids = new Set([exactId(item.name)]);
+  if (typeof item.hist === 'string') ids.add(exactId(item.hist));
+  if (item.histId) ids.add(item.histId);
+  return ids;
+}
+
+function declaredIds(items) {
+  const ids = new Set();
+  for (const item of items || []) {
+    for (const id of ownIds(item)) ids.add(id);
+    for (const a of item.alts || []) {
+      ids.add(exactId(a.name));
+      if (typeof a.hist === 'string') ids.add(exactId(a.hist));
+      if (a.histId) ids.add(a.histId);
+    }
+  }
+  return ids;
+}
+
+export function exactId(name) {
+  return canonicalId(normalizeExercise(name).id);
+}
+
+export function exerciseCatalog(sessions) {
+  return [...indexByExercise(sessions || []).values()]
+    .map((e) => {
+      const dates = e.sessions.map((s) => s.date).filter(Boolean).sort();
+      return { id: e.id, name: e.name, group: e.group, samples: e.sessions.length, last: dates[dates.length - 1] || null };
+    })
+    .sort((a, b) => b.samples - a.samples);
+}
+
+export function identifyName(name, catalog) {
+  const n = normalizeExercise(name);
+  if (!n.isExercise) return { valid: false };
+  const id = canonicalId(n.id);
+  const existing = catalog.find((c) => c.id === id) || null;
+  if (existing) return { valid: true, id, existing, similar: [] };
+
+  const want = new Set(n.words);
+  const wantMoves = movementsOf(n.words);
+  const similar = catalog
+    .map((c) => {
+      const words = normalizeExercise(c.name).words;
+      const common = words.filter((w) => want.has(w)).length;
+      const moveOk = wantMoves.size === 0 || words.some((w) => wantMoves.has(w));
+      return { c, score: moveOk ? common / Math.max(want.size, words.length) : 0 };
+    })
+    .filter((x) => x.score >= 0.5)
+    .sort((a, b) => b.score - a.score || b.c.samples - a.c.samples)
+    .slice(0, 3)
+    .map((x) => x.c);
+  return { valid: true, id, existing: null, similar };
 }
 
 function findInHistory(index, item) {
@@ -239,8 +426,8 @@ function findInHistory(index, item) {
   const wanted = want.words;
   if (wanted.length === 0) return null;
 
-  // O movimento tem que bater. Sem isso, o peso dado ao volume faz "Remada Alta"
-  // cair em "Puxada Alta" só porque esta tem 108 séries e as duas terminam igual.
+  // the movement has to match or volume weighting sends "Remada Alta" to "Puxada
+  // Alta" just because that one has 108 sets and both end the same
   const wantMoves = movementsOf(wanted);
 
   const scored = [...index.values()]
@@ -252,26 +439,24 @@ function findInHistory(index, item) {
       const ok = movesOk && !contradicts(wanted, words);
       const hits = wanted.filter((w) => words.has(w)).length;
       const coverage = ok ? hits / wanted.length : 0;
-      // Penaliza candidatos muito mais longos que o pedido (evita que
-      // "Supino" case com "Supino Inclinado Halter Bem Alto").
+
+      // "Supino" shouldn't match "Supino Inclinado Halter Bem Alto"
       const excess = Math.max(0, words.size - wanted.length) / (wanted.length + 2);
-      // O volume pesa alto de propósito: uma variação anotada 3 vezes há um ano
-      // não pode vencer o aparelho principal com 72 séries só por ter uma
-      // palavra a mais em comum. Satura em 20 séries.
+
+      // volume weighs a lot on purpose: a variation logged 3 times a year ago can't
+      // beat the main machine with 72 sets for sharing one extra word
       const volume = Math.min(1, e.sessions.length / 20);
       return { e, coverage, score: coverage - excess * 0.35 + volume * 0.6 };
     })
-    .filter((c) => c.coverage >= MIN_MATCH)
+    .filter((c) => c.coverage >= MIN_MATCH && !item.avoid?.has(c.e.id))
     .sort((a, b) => b.score - a.score);
 
   if (scored.length) return scored[0].e;
 
-  // Última tentativa: o alternativo declarado no programa (Y Raise, Esteira…).
-  if (item.alt) return findInHistory(index, { match: item.alt });
+  if (item.alt) return findInHistory(index, { match: item.alt, avoid: item.avoid });
   return null;
 }
 
-/** Prévia dos próximos N treinos do ciclo — usada no seletor da home. */
 export function upcoming(state, n = 6, opts = {}) {
   const pos = state.cyclePosition || 0;
   return Array.from({ length: n }, (_, i) => {
@@ -287,10 +472,6 @@ export function upcoming(state, n = 6, opts = {}) {
   });
 }
 
-/**
- * Deriva a posição inicial do ciclo a partir do histórico: continua de onde o
- * último treino registrado parou.
- */
 export function inferStartPosition(sessions) {
   const dated = (sessions || []).filter((s) => s.date).sort((a, b) => a.date.localeCompare(b.date));
   const last = dated[dated.length - 1];
@@ -299,8 +480,7 @@ export function inferStartPosition(sessions) {
   const slot = classifySession(last);
   if (!slot) return 0;
 
-  // Assume que o último treino foi variante A se não houver registro explícito;
-  // a partir do primeiro treino logado pela app a posição passa a ser exata.
+  // imported sessions don't say A/B, assume A. Exact once workouts are logged in the app
   const variant = last.variant || 'A';
   const idx = CYCLE.findIndex((c) => c.slot === slot && c.variant === variant);
   return idx >= 0 ? idx + 1 : 0;

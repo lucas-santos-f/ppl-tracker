@@ -1,0 +1,17 @@
+# Cloudflare Pages headers.
+#
+# No server, no database: data lives on the phone and, if sync is on, in a
+# private GitHub repo. The site only serves code. Still:
+#   CSP             scripts only from this origin, and the only place the page can
+#                   talk to is api.github.com, so injected JS can't ship the token
+#                   or the history anywhere else
+#   frame-ancestors nobody embeds the app in some lookalike page
+#   X-Robots-Tag    personal tool, keep it out of search engines
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Robots-Tag: noindex, nofollow, noarchive, nosnippet
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+  ! Access-Control-Allow-Origin

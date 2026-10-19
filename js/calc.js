@@ -1,80 +1,61 @@
-// Cálculo de 1RM e cargas alvo.
-
 import { workSets, tonnage } from './sets.js';
 
-// Brzycki é confiável até ~12 reps. Acima disso a fórmula superestima muito
-// (uma série de 20 reps projeta 2,1× a carga usada), então séries longas entram
-// no histórico mas não pesam na estimativa de 1RM.
+// Brzycki falls apart past ~12 reps (a set of 20 projects 2.1x the load used),
+// so long sets stay in the history but don't feed the 1RM estimate
 const BRZYCKI_MAX_REPS = 12;
 
-// Séries mais antigas que isso só são usadas se não houver nada recente.
-const RECENT_WINDOW_DAYS = 56; // 8 semanas
+const RECENT_WINDOW_DAYS = 56;
 
-// Teto de segurança. Extrapolar uma 1RM a partir de séries de 10-12 reps e
-// depois tomar 85% dela produz alvos acima de qualquer carga já levantada —
-// na Puxada Alta, 130kg×10 projeta 1RM de 173kg e alvo de 148kg. Nenhum alvo
-// pode passar deste fator sobre a maior carga que já foi de fato usada.
+// Safety cap. Extrapolating a 1RM from 10-12 rep sets and then taking 85% of it
+// asked for loads nobody had ever lifted: lat pulldown 130kg×10 -> 1RM 173 ->
+// target 148kg. No target goes past this factor over the best load actually used.
 const MAX_OVER_BEST_LOAD = 1.10;
 
-// Séries curtas estimam a 1RM com muito mais precisão que séries longas.
-// O peso cai conforme a série se afasta da faixa de força.
+// short sets estimate 1RM way better than long ones
 function repsConfidence(reps) {
   if (reps <= 8) return 1.0;
   if (reps <= 10) return 0.97;
   return 0.94;
 }
 
-// Dia pesado em 5-8 reps: um treino inteiro de 4-6 castiga articulação demais
-// para o retorno que dá. A intensidade acompanha a faixa — 5-8 reps pede menos
-// carga que 4-6, e prescrever 85% para 8 reps seria pedir uma série impossível.
+// heavy day is 5-8, not 4-6: a whole session of 4-6 beats up the joints for
+// what it gives back. 85% for 8 reps would be an impossible set, hence 0.80.
 export const REP_RANGE = {
   A: [5, 8],
   B: [10, 15],
 };
 
 export const INTENSITY = {
-  A: 0.80, // Força      → 5-8 reps
-  B: 0.70, // Hipertrofia → 10-15 reps
+  A: 0.80,
+  B: 0.70,
 };
 
-/**
- * Intensidade (%1RM) que corresponde a uma faixa de reps, pela inversa de
- * Brzycki no ponto médio da faixa.
- *
- * Usada quando um exercício tem faixa de reps própria (ex: Extensora sempre
- * em 8-10, força ou hipertrofia): 85%/70% fixos foram calibrados para 4-6/10-15
- * reps — aplicar o mesmo 85% a uma faixa de 8-10 pediria uma carga pesada
- * demais para o número de reps prescrito, e o joelho paga essa conta num
- * isolado como a extensora.
- */
+/** %1RM for a rep target, inverse Brzycki. Used when an exercise has its own rep range. */
 export function intensityForReps(reps) {
   const pct = 1.0278 - 0.0278 * reps;
   return Math.min(0.95, Math.max(0.5, pct));
 }
 
-/** 1RM = Carga / (1.0278 - 0.0278 × Reps) */
 export function brzycki(load, reps) {
   if (!load || load <= 0 || !reps || reps < 1) return null;
   const denom = 1.0278 - 0.0278 * reps;
-  if (denom <= 0.05) return null; // reps absurdas — fórmula degenera
+  if (denom <= 0.05) return null;
   return load / denom;
 }
 
-/** Arredonda cargas prescritas para o múltiplo de 5kg mais próximo. */
-export function roundTo5kg(kg) {
+// Suggestions only. Every machine stack and dumbbell rack at my gym goes in 5kg
+// steps, a "47kg" target just gets rounded in your head every time. What gets
+// typed is stored as-is (2.5kg plates on bench included).
+export const LOAD_STEP = 5;
+
+export function roundLoad(kg, step = LOAD_STEP) {
   if (!Number.isFinite(kg)) return null;
-  return Math.round(kg / 5) * 5;
+  return Math.round(kg / step) * step;
 }
 
 /**
- * Estima a 1RM de um exercício a partir do histórico de séries.
- *
- * Usa a melhor série (maior 1RM projetada) dentro da janela recente. Se não
- * houver série válida recente, cai para o histórico inteiro e sinaliza `stale`.
- *
- * @param {Array<{date:string, load:number, reps:number}>} sets
- * @param {{referenceDate?: string}} [opts]
- * @returns {{oneRM:number, basedOn:object, stale:boolean, samples:number}|null}
+ * Best projected 1RM inside the last 8 weeks. Falls back to the whole history
+ * and flags it `stale` when there's nothing recent.
  */
 export function estimateOneRM(sets, opts = {}) {
   const ref = opts.referenceDate ? new Date(opts.referenceDate) : new Date();
@@ -97,17 +78,12 @@ export function estimateOneRM(sets, opts = {}) {
     basedOn: { date: best.date, load: best.load, reps: best.reps },
     stale: recent.length === 0,
     samples: pool.length,
-    // Maior carga efetivamente levantada — base do teto de segurança.
     bestLoad: Math.max(...(sets || []).filter((s) => s.load > 0).map((s) => s.load)),
   };
 }
 
-/**
- * Melhor 1RM projetada dentro de um conjunto de séries, SEM janela de
- * recência — usada para comparar períodos históricos inteiros (dashboard),
- * onde "recente" não faz sentido: queremos o pico real daquele período,
- * mesmo que tenha sido no início dele.
- */
+// Same thing without the recency window, for comparing whole periods on the
+// dashboard (the peak of that period, even if it was at the start of it)
 export function bestOneRM(sets) {
   const usable = (sets || [])
     .filter((s) => s.load > 0 && s.reps >= 1 && s.reps <= BRZYCKI_MAX_REPS)
@@ -124,13 +100,6 @@ export function bestOneRM(sets) {
   };
 }
 
-/**
- * Carga alvo, limitada pelo teto de segurança.
- * @param {number} oneRM
- * @param {number} intensity fração de 1RM (0.85 = 85%)
- * @param {number} [bestLoad] maior carga já levantada no exercício
- * @returns {{load:number|null, capped:boolean, raw:number|null}}
- */
 export function targetLoad(oneRM, intensity, bestLoad) {
   if (!Number.isFinite(oneRM)) return { load: null, capped: false, raw: null };
 
@@ -138,69 +107,70 @@ export function targetLoad(oneRM, intensity, bestLoad) {
   const ceiling = Number.isFinite(bestLoad) ? bestLoad * MAX_OVER_BEST_LOAD : Infinity;
   const capped = raw > ceiling;
 
-  return { load: roundTo5kg(Math.min(raw, ceiling)), capped, raw: roundTo5kg(raw) };
+  return { load: roundLoad(Math.min(raw, ceiling)), capped, raw: roundLoad(raw) };
 }
 
 /**
- * Prescrição completa de um exercício para o dia.
- *
- * `opts.repRange`, quando presente, substitui a faixa padrão da variante
- * (4-6 força / 10-15 hipertrofia) e a intensidade é recalculada a partir dela
- * — para que a carga pedida realmente combine com o número de reps prescrito.
- *
- * @returns {{exerciseId, name, variant, targetLoad, repRange, oneRM, stale, basedOn, bodyweight}}
+ * Full prescription for one exercise today. opts.repRange overrides the
+ * variant's range and the intensity is recomputed from it, so the load
+ * actually matches the reps asked for.
  */
 export function prescribe(exercise, variant, opts = {}) {
-  const machineBaseLoad = opts.machineBaseLoad ?? 0;
-  const calculationExercise = machineBaseLoad > 0
-    ? {
-        ...exercise,
-        sessions: (exercise.sessions || []).map((set) => ({
-          ...set,
-          load: set.load > 0 ? set.load + machineBaseLoad : set.load,
-        })),
-      }
-    : exercise;
-  const est = estimateOneRM(calculationExercise.sessions, opts);
+  const est = estimateOneRM(exercise.sessions, opts);
   const [minReps, maxReps] = opts.repRange ?? REP_RANGE[variant];
   const intensity = opts.repRange ? intensityForReps((minReps + maxReps) / 2) : INTENSITY[variant];
 
-  // Exercícios de peso corporal (abdominal, barra fixa) não têm carga alvo —
-  // o alvo é a faixa de reps, e a progressão é por volume.
   const isBodyweight = !est && (exercise.sessions || []).some((s) => s.bodyweight);
   const target = est ? targetLoad(est.oneRM, intensity, est.bestLoad) : { load: null, capped: false };
-  const prescribedLoad = Number.isFinite(target.load) ? Math.max(0, target.load - machineBaseLoad) : target.load;
-  const uncappedLoad = Number.isFinite(target.raw) ? Math.max(0, target.raw - machineBaseLoad) : target.raw;
 
   return {
     exerciseId: exercise.id,
     name: exercise.name,
     group: exercise.group,
     variant,
-    targetLoad: prescribedLoad,
-    capped: target.capped,       // alvo limitado pelo teto de segurança
-    uncappedLoad,                // o que a fórmula pedia antes do teto
+    targetLoad: target.load,
+    capped: target.capped,
+    uncappedLoad: target.raw,
     repRange: [minReps, maxReps],
     oneRM: est ? Math.round(est.oneRM * 10) / 10 : null,
-    bestLoad: est ? est.bestLoad - machineBaseLoad : null,
+    bestLoad: est ? est.bestLoad : null,
     stale: est ? est.stale : false,
-    basedOn: est ? { ...est.basedOn, load: est.basedOn.load - machineBaseLoad } : null,
+    basedOn: est ? est.basedOn : null,
     bodyweight: isBodyweight,
     lastSets: lastSessionSets(exercise.sessions),
+    lastDays: recentDaysSets(exercise.sessions, LAST_DAYS),
   };
 }
 
-// Séries do último dia em que o exercício foi feito — mostrado como referência
-// na tela do treino ("da última vez você fez...").
-//
-// Aquecimento fica de fora: mostrar "20kg×9" como referência de um dia em que
-// o trabalho foi a 30kg induz a erro na hora de escolher a carga.
+export const LAST_DAYS = 7;
+
+// "last time" alone hides the trend, the card shows the last N days
+function recentDaysSets(sessions, n) {
+  const byDate = new Map();
+  for (const s of sessions || []) {
+    if (!s.date) continue;
+    if (!byDate.has(s.date)) byDate.set(s.date, []);
+    byDate.get(s.date).push(s);
+  }
+  return [...byDate.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, n)
+    .map(([date, sets]) => ({
+      date,
+      sets: workSets(sets).map((s) => ({ load: s.load, reps: s.reps, role: s.role,
+        techniques: s.techniques || null })),
+    }))
+    .filter((d) => d.sets.length);
+}
+
+// warm-ups left out: showing "20kg×9" for a day the work was at 30kg is misleading
 function lastSessionSets(sessions) {
   const dated = (sessions || []).filter((s) => s.date);
   if (dated.length === 0) return [];
   const lastDate = dated.reduce((a, b) => (b.date > a.date ? b : a)).date;
   const ofDay = dated.filter((s) => s.date === lastDate);
-  return workSets(ofDay).map((s) => ({ load: s.load, reps: s.reps, role: s.role }));
+  return workSets(ofDay).map((s) => ({ load: s.load, reps: s.reps, role: s.role,
+    techniques: s.techniques || null }));
 }
 
 export { tonnage };

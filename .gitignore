@@ -1,0 +1,15 @@
+# training logs and backups are personal data, never commit them
+Cargas*.txt
+*historico*.txt
+*backup*.json
+training-history.json
+training-draft.json
+
+# the GitHub token only ever lives in the phone's localStorage
+.env
+*token*
+
+ppl-tracker.html
+
+.DS_Store
+Thumbs.db

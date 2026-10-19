@@ -1,26 +1,15 @@
-// Normalização e identidade de exercícios.
+// The same exercise shows up spelled five ways over a year:
+//   Supino Incl Halt · Supino Inclinado Halter · Supino Inculcado Halter · Supino Incl Halter
+// One id per spelling splits ~125 sets into five useless histories, so:
+//   1. expand abbreviations (incl -> inclinado, halt -> halter)
+//   2. fix typos by edit distance against the known vocabulary
+//   3. build the id from the SORTED set of words, so word order doesn't matter
+// Equipment words (amarela, leve, kikos) stay in the id on purpose: different
+// machines, different load curves.
 //
-// O mesmo exercício aparece escrito de cinco jeitos ao longo do ano:
-//
-//   Supino Incl Halt · Supino Inclinado Halter · Supino Inculcado Halter
-//   Supino Incl Halter · Supino Inclinado Halt
-//
-// Se cada grafia virar um exercício, 125 séries se dividem em cinco históricos
-// curtos e a estimativa de 1RM fica inútil. A identidade é resolvida em três
-// etapas:
-//
-//   1. expandir abreviações  (incl → inclinado, halt → halter)
-//   2. corrigir typos por semelhança contra o vocabulário conhecido
-//   3. gerar o ID a partir do CONJUNTO ORDENADO de palavras, para que
-//      "lateral máquina sentado" e "lateral sentado máquina" colidam de propósito
-//
-// A especificação de equipamento (amarela, leve, kikos) permanece no ID: são
-// aparelhos diferentes, com curvas de carga diferentes.
-
-// ── vocabulário canônico ──────────────────────────────────────────────────────
+// The vocabulary is Portuguese because my notes are. English gym terms map into it.
 
 const ABBREV = {
-  // movimentos
   'sup': 'supino', 'supino': 'supino',
   'incl': 'inclinado', 'incli': 'inclinado', 'inclin': 'inclinado',
   'inclinado': 'inclinado', 'inculcado': 'inclinado', 'inclinada': 'inclinado',
@@ -41,9 +30,9 @@ const ABBREV = {
   'abd': 'abdominal', 'abdominal': 'abdominal', 'abdomen': 'abdominal',
   'abs': 'abdominal', 'cad': 'cadeira', 'cadeira': 'cadeira',
   'cross over': 'crossover', 'crossover': 'crossover',
-  // "Lat pulldown" e "pulldown" NÃO são o mesmo aparelho: o pulldown é feito
-  // numa polia bem mais leve, com escala de carga própria. Juntar os dois faz
-  // a carga da polia leve inflar a 1RM da puxada alta.
+
+  // lat pulldown and pulldown are NOT the same machine. The pulldown is a much
+  // lighter pulley; merging them inflated the lat pulldown 1RM
   'lat pull down': 'puxada alta', 'lat pulldown': 'puxada alta',
   'pulldown': 'pulldown', 'pull down': 'pulldown',
   'skullcrusher': 'triceps testa', 'skull crusher': 'triceps testa',
@@ -77,7 +66,6 @@ const ABBREV = {
   'pegada fechada': 'pegada fechada', 'pegada aberta': 'pegada aberta',
   'seated dips': 'paralela sentado',
 
-  // equipamento e posição
   'maq': 'maquina', 'maquina': 'maquina', 'máquina': 'maquina', 'maqu': 'maquina',
   'unilat': 'unilateral', 'unilateral': 'unilateral', 'unilateeal': 'unilateral',
   'bilat': 'bilateral', 'bilateral': 'bilateral',
@@ -100,12 +88,9 @@ const ABBREV = {
   'bem': 'bem', 'frontal': 'frontal', 'posterior': 'posterior', 'invertido': 'invertido',
 };
 
-// Palavras que descrevem COMO a série foi feita, não QUAL exercício é.
-// Saem do nome porque já estão capturadas nos campos da série.
+// words about HOW the set went, not WHICH exercise. 'cadeira' is just the seat
+// (cadeira flexora == flexora) but 'mesa flexora' is lying down, so 'mesa' stays
 const SET_MODIFIERS = new Set([
-  // "Cadeira Flexora" e "Flexora" são o mesmo exercício — a cadeira é só o
-  // móvel. Já "Mesa Flexora" é outro movimento (deitado), por isso 'mesa'
-  // continua fazendo parte da identidade e não entra nesta lista.
   'cadeira',
   'cada', 'lado', 'lados', 'por', 'c',
   'drop', 'dropset', 'rest', 'pause', 'top', 'set', 'sets',
@@ -115,14 +100,13 @@ const SET_MODIFIERS = new Set([
   'pausas', 'cadenciadas', 'amplitude', 'menor', 'maior',
 ]);
 
-// Linhas que são anotação solta, nunca nome de exercício.
+// loose notes, never an exercise name
 const NOT_EXERCISE = new Set([
   'duplo', 'balancando corpo', 'com cotoveleira', 'pegada fechada', 'zzz',
   'sem peso', 'livre', 'obs', 'nota', 'notas', 'peito', 'costas', 'perna', 'pernas',
   'ombro', 'ombros', 'braco', 'bracos', 'dorsais', 'cargas',
 ]);
 
-// Grupos musculares.
 const GROUP_KEYWORDS = [
   ['push', ['supino', 'crossover', 'desenvolvimento', 'elevacao lateral', 'voador',
             'crucifixo', 'triceps', 'paralela', 'pegada fechada', 'y raise']],
@@ -142,21 +126,17 @@ const GROUP_OVERRIDES = [
   [/\bombro\b/, 'push'],
 ];
 
-// ── implementação ─────────────────────────────────────────────────────────────
-
 function stripAccents(s) {
   return s.normalize('NFD').replace(/\p{Diacritic}/gu, '');
 }
 
-// Regex das abreviações, entradas mais longas primeiro para que expressões de
-// várias palavras ("lat pull down") vençam as de uma só ("lat").
+// longest keys first so "lat pull down" wins over "lat"
 const ABBREV_RE = (() => {
   const keys = Object.keys(ABBREV).sort((a, b) => b.length - a.length);
   const esc = keys.map((k) => stripAccents(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   return new RegExp(`(?<![a-z])(${esc.join('|')})(?![a-z])`, 'gi');
 })();
 
-// Vocabulário para correção de typos.
 const VOCAB = [...new Set(Object.values(ABBREV).flatMap((v) => v.split(' ')))];
 
 function levenshtein(a, b) {
@@ -174,7 +154,7 @@ function levenshtein(a, b) {
   return prev[b.length];
 }
 
-// Palavras de 5+ letras a uma edição de um termo conhecido são typo.
+// 5+ letters and one edit away from a known word -> typo
 function fixTypo(word) {
   if (word.length < 5 || VOCAB.includes(word)) return word;
   let best = null, bestD = 2;
@@ -186,10 +166,6 @@ function fixTypo(word) {
   return best ?? word;
 }
 
-/**
- * Resolve a identidade de um exercício a partir da linha crua.
- * @returns {{name, id, group, words, isExercise}}
- */
 export function normalizeExercise(raw) {
   const original = String(raw || '').trim();
   let s = stripAccents(original.toLowerCase())
@@ -201,10 +177,8 @@ export function normalizeExercise(raw) {
     return { name: original, id: '', group: 'other', words: [], isExercise: false };
   }
 
-  // 1. expandir abreviações
   s = s.replace(ABBREV_RE, (m) => ABBREV[m.toLowerCase()] ?? m);
 
-  // 2. tokenizar, corrigir typos, remover modificadores de série e números
   const words = s.split(' ')
     .filter((w) => w && !/^\d+$/.test(w))
     .map(fixTypo)
@@ -214,7 +188,6 @@ export function normalizeExercise(raw) {
     return { name: original, id: '', group: 'other', words: [], isExercise: false };
   }
 
-  // 3. ID = conjunto ordenado, para que a ordem das palavras não crie duplicata
   const unique = [...new Set(words)].sort();
   const id = unique.join('-');
 
@@ -235,8 +208,7 @@ function inferGroup(text) {
   return 'other';
 }
 
-// A identidade é calculada sem acentos (para que "máquina" e "maquina" colidam),
-// mas o nome exibido leva a acentuação de volta.
+// ids are accent-free so 'máquina' and 'maquina' collide; accents come back for display
 const DISPLAY = {
   elevacao: 'elevação', triceps: 'tríceps', biceps: 'bíceps', maquina: 'máquina',
   frances: 'francês', pendulo: 'pêndulo', gluteo: 'glúteo', obliquo: 'oblíquo',
@@ -255,10 +227,9 @@ export function slug(s) {
   return stripAccents(String(s).toLowerCase()).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-// Palavras que nomeiam o MOVIMENTO em si, por oposição a equipamento, ângulo
-// ou pegada. Dois exercícios só podem ser considerados o mesmo se compartilham
-// um movimento: "Remada Alta" e "Puxada Alta" dividem o "alta", mas remada não
-// é puxada.
+// Words that name the MOVEMENT, as opposed to equipment, angle or grip. Two names
+// can only be the same exercise if they share one: 'Remada Alta' and 'Puxada Alta'
+// share 'alta', but a row is not a pulldown.
 export const MOVEMENTS = new Set([
   'supino', 'crossover', 'voador', 'crucifixo', 'desenvolvimento', 'elevacao',
   'triceps', 'biceps', 'paralela', 'pegada', 'testa', 'frances',
@@ -270,14 +241,12 @@ export const MOVEMENTS = new Set([
   'esteira', 'bicicleta', 'escada',
 ]);
 
-/** Palavras de movimento presentes num nome já normalizado. */
 export function movementsOf(words) {
   return new Set((words || []).filter((w) => MOVEMENTS.has(w)));
 }
 
-// Qualificadores que se excluem: "Remada Alta" e "Remada Baixa" são exercícios
-// diferentes, não grafias do mesmo. Se o programa pede um lado do par e o
-// candidato traz o outro sem trazer o pedido, não é o mesmo exercício.
+// qualifiers that rule each other out: Remada Alta vs Remada Baixa are two
+// exercises, not two spellings
 const OPPOSITES = [
   ['alta', 'baixa'],
   ['superior', 'inferior'],
@@ -285,13 +254,12 @@ const OPPOSITES = [
   ['inclinado', 'declinado'],
   ['unilateral', 'bilateral'],
   ['sentado', 'pe'],
+
+  // without this pair, asking for "Agachamento Livre Tradicional" matched Frontal
+  // and the sets went into the wrong history
+  ['frontal', 'tradicional'],
 ];
 
-/**
- * True quando `candidate` contradiz um qualificador exigido por `wanted`.
- * @param {string[]} wanted palavras do nome pedido
- * @param {Set<string>} candidate palavras do nome candidato
- */
 export function contradicts(wanted, candidate) {
   const want = new Set(wanted);
   for (const [a, b] of OPPOSITES) {
